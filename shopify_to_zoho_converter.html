@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopify → Zoho Billing Converter</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1a56db;
+    --blue-dark: #1645b8;
+    --blue-light: #dbeafe;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --amber-light: #fffbeb;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --shadow: 0 8px 40px rgba(0,0,0,0.10);
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 50%, #e0e7ff 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 2.5rem;
+    max-width: 540px;
+    width: 100%;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .logo-wrap {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, #1a56db, #3b82f6);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+  }
+  .logo-wrap svg { width: 26px; height: 26px; fill: #fff; }
+
+  .header-text h1 { font-size: 17px; font-weight: 800; color: var(--gray-900); line-height: 1.2; }
+  .header-text p { font-size: 12.5px; color: var(--gray-500); margin-top: 3px; }
+
+  .badge {
+    margin-left: auto;
+    background: var(--blue-light);
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  /* FLOW INDICATOR */
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .flow-tag {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .flow-tag.shopify { background: #fff0e6; color: #b45309; border: 1.5px solid #fed7aa; }
+  .flow-tag.zoho { background: #e8f5e9; color: #166534; border: 1.5px solid #86efac; }
+  .flow-arrow { color: var(--gray-400); font-size: 18px; }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 2px dashed #c7d2fe;
+    border-radius: 14px;
+    padding: 2.2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f8f9ff;
+    margin-bottom: 1.2rem;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--blue);
+    background: #eff6ff;
+    transform: scale(1.01);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon {
+    width: 52px; height: 52px;
+    background: var(--blue-light);
+    border-radius: 14px;
+    margin: 0 auto 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .drop-icon svg { width: 28px; height: 28px; fill: var(--blue); }
+  .drop-title { font-size: 15px; font-weight: 700; color: #1e3a5f; margin-bottom: 5px; }
+  .drop-sub { font-size: 12.5px; color: var(--gray-500); }
+  .drop-formats {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 10px;
+  }
+  .fmt-tag {
+    font-size: 11px; font-weight: 600;
+    background: var(--gray-100); color: var(--gray-500);
+    padding: 3px 8px; border-radius: 6px;
+  }
+
+  /* FILE INFO */
+  .file-info {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--green-light);
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 1.2rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .file-info.show { display: flex; }
+  .file-info svg { width: 20px; height: 20px; fill: var(--green); flex-shrink: 0; }
+  .file-name { font-size: 13px; font-weight: 600; color: #166534; flex: 1; word-break: break-all; }
+  .file-remove { background: none; border: none; cursor: pointer; color: var(--gray-400); font-size: 20px; line-height: 1; padding: 0 2px; transition: color 0.15s; }
+  .file-remove:hover { color: var(--red); }
+
+  /* STATS */
+  .stats { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1.2rem; }
+  .stats.show { display: grid; animation: fadeIn 0.3s ease; }
+  .stat-card {
+    background: var(--gray-50);
+    border-radius: 12px; padding: 14px 10px;
+    text-align: center; border: 1px solid var(--gray-200);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--blue); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--gray-500); margin-top: 4px; font-weight: 500; }
+
+  /* BUTTONS */
+  .btn-convert {
+    width: 100%;
+    background: linear-gradient(135deg, #1a56db, #3b82f6);
+    color: #fff;
+    border: none; border-radius: 12px;
+    padding: 15px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 1rem;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 14px rgba(26,86,219,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .btn-convert:hover:not(:disabled) { background: linear-gradient(135deg, #1645b8, #2563eb); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,86,219,0.4); }
+  .btn-convert:active:not(:disabled) { transform: scale(0.98); }
+  .btn-convert:disabled { background: linear-gradient(135deg, #93c5fd, #bfdbfe); cursor: not-allowed; box-shadow: none; }
+  .btn-convert svg { width: 18px; height: 18px; fill: #fff; }
+
+  .btn-download {
+    display: none; width: 100%;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 15px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    animation: popIn 0.3s ease;
+  }
+  .btn-download.show { display: flex; }
+  .btn-download:hover { background: linear-gradient(135deg, #15803d, #16a34a); transform: translateY(-1px); }
+  .btn-download svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* STATUS */
+  .status-box {
+    display: none; border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; font-weight: 600; margin-bottom: 1rem;
+    align-items: center; gap: 10px;
+  }
+  .status-box.show { display: flex; animation: fadeIn 0.25s ease; }
+  .status-box.processing { background: var(--amber-light); border: 1.5px solid #fcd34d; color: #92400e; }
+  .status-box.success { background: var(--green-light); border: 1.5px solid #86efac; color: #166534; }
+  .status-box.error { background: var(--red-light); border: 1.5px solid #fca5a5; color: #991b1b; }
+  .status-box svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* SPINNER */
+  .spinner {
+    width: 17px; height: 17px;
+    border: 2.5px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  /* FOOTER */
+  .footer {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; color: var(--gray-400); margin-top: 0.5rem;
+  }
+  .footer svg { width: 13px; height: 13px; fill: var(--gray-400); }
+
+  /* INFO SECTION */
+  .info-section {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 1.2rem;
+    border: 1px solid #e0e7ff;
+  }
+  .info-title {
+    font-size: 12px; font-weight: 700; color: var(--blue);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .info-item { font-size: 12px; color: var(--gray-500); display: flex; align-items: center; gap: 5px; }
+  .info-item::before { content: '✓'; color: var(--green); font-weight: 700; font-size: 11px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="logo-wrap">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>Shopify → Zoho Billing</h1>
+      <p>Bulk order converter — instant Excel export</p>
+    </div>
+    <div class="badge">Satanand</div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-title">Check List Before Billing</div>
+    <div class="info-grid">
+      <div class="info-item">Invoice Number should be unique (Manual).</div>
+      <div class="info-item">Invoice Date should be currect date. (Manual)</div>
+      <div class="info-item">Make Sure the Gst Treatment only have business_gst and business_none only. (Autmated but check)</div>
+      <div class="info-item">Make sure that Item Name, SKU & HSN and placed corrected if not they put the right value. (Automated but check)</div>
+    </div>
+  </div>
+
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+    </div>
+    <div class="drop-title">Drop your Shopify orders file here</div>
+    <div class="drop-sub">or click to browse from your computer</div>
+    <div class="drop-formats">
+      <span class="fmt-tag">.xlsx</span>
+      <span class="fmt-tag">.xls</span>
+      <span class="fmt-tag">.csv</span>
+    </div>
+  </div>
+
+  <div class="file-info" id="fileInfo">
+    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+    <span class="file-name" id="fileName"></span>
+    <button class="file-remove" id="removeFile" title="Remove">&#x2715;</button>
+  </div>
+
+  <div class="stats" id="statsBox">
+    <div class="stat-card">
+      <div class="stat-num" id="statRows">0</div>
+      <div class="stat-label">Total Rows</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statInvoices">0</div>
+      <div class="stat-label">Invoices</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statAmount">₹0</div>
+      <div class="stat-label">Total Value</div>
+    </div>
+  </div>
+
+  <div class="status-box" id="statusBox">
+    <svg id="statusIcon" viewBox="0 0 24 24"></svg>
+    <span id="statusText"></span>
+  </div>
+
+  <button class="btn-convert" id="btnConvert" disabled>
+    <div class="spinner" id="spinner"></div>
+    <svg id="convertIcon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6a6 6 0 0 1-5.65-4H4.26A8 8 0 0 0 12 20c4.42 0 8-3.58 8-8h3l-4-4zM9 8a6 6 0 0 1 5.65 4H16.74A8 8 0 0 0 12 4C7.58 4 4 7.58 4 12H1l4 4 4-4H6c0-3.31 2.69-6 6-6z"/></svg>
+    Convert to Zoho Format
+  </button>
+
+  <button class="btn-download" id="btnDownload">
+    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    Download Zoho Excel File
+  </button>
+
+  <div class="footer">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    File processed locally — no data sent to any server
+  </div>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const SELLER_STATE = 'Delhi';
+const BRANCH_NAME  = 'Delhi- Online';
+const CURRENCY     = 'INR';
+const NOTES = "Thanks for your business. The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.";
+const TERMS = "Picknpack ecommerce";
+
+const STATE_CODES = {
+  'Andhra Pradesh':'AP','Arunachal Pradesh':'AR','Assam':'AS','Bihar':'BR',
+  'Chhattisgarh':'CG','Goa':'GA','Gujarat':'GJ','Haryana':'HR',
+  'Himachal Pradesh':'HP','Jharkhand':'JH','Karnataka':'KA','Kerala':'KL',
+  'Madhya Pradesh':'MP','Maharashtra':'MH','Manipur':'MN','Meghalaya':'ML',
+  'Mizoram':'MZ','Nagaland':'NL','Odisha':'OD','Punjab':'PB',
+  'Rajasthan':'RJ','Sikkim':'SK','Tamil Nadu':'TN','Telangana':'TS',
+  'Tripura':'TR','Uttar Pradesh':'UP','Uttarakhand':'UK','Uttrakhand':'UK',
+  'West Bengal':'WB','West bengal':'WB',
+  'Delhi':'DL','DELHI':'DL',
+  'Chandigarh':'CH','Jammu and Kashmir':'JK','Ladakh':'LA',
+  // Short codes pass-through
+  'DL':'DL','MH':'MH','GJ':'GJ','KA':'KA','TN':'TN','UP':'UP',
+  'HR':'HR','RJ':'RJ','MP':'MP','WB':'WB','AP':'AP','TS':'TS',
+};
+
+// Exact Zoho header columns in required order
+const ZOHO_HEADERS = [
+  "Invoice Number","Invoice Date","Customer Name","GST Treatment",
+  "GST Identification Number (GSTIN)","Place of Supply","Sales order id",
+  "Payment Terms","Payment Terms Label","Due Date","Currency Code",
+  "Exchange Rate","Account","SKU","Item Name","Item Desc","Item Type",
+  "HSN/SAC","Quantity","Usage unit","Item Price","Is Inclusive Tax",
+  "Item Tax","Item Tax Type","Item Tax %","Is Discount Before Tax",
+  "Entity Discount Percent","Entity Discount Amount","Discount",
+  "Discount Amount","Adjustment","Adjustment Description","Notes",
+  "Terms & Conditions","E-Commerce Operator Name","E-Commerce Operator GSTIN",
+  "Branch Name","Email","MOBILE NO","Billing Address Line 1",
+  "Billing Address Line 2","Billing city","Billing State","Billing Country",
+  "Billing Pin code","Shipping Address Line 1","Shipping Address Line 2",
+  "Shipping City","Shipping State","Shipping Country","Shipping Pin code",
+  "Accounts Receivable","Ack No.:","IRN :"
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function clean(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim();
+  return (s === 'nan' || s === 'undefined' || s === '-') ? '' : s;
+}
+
+function cleanPin(v) {
+  let s = clean(v).replace(/^'/, '');
+  return s.endsWith('.0') ? s.slice(0, -2) : s;
+}
+
+function formatDate(v) {
+  if (!v) return '';
+  // Excel serial number
+  if (typeof v === 'number') {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return d.toISOString().slice(0, 10);
+  }
+  // ISO string with timezone like "2026-06-01 13:41:12 +0530"
+  const s = String(v);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(v);
+  if (!isNaN(d)) return d.toISOString().slice(0, 10);
+  return s.slice(0, 10);
+}
+
+function getPOS(state) {
+  if (!state) return '';
+  const code = STATE_CODES[state.trim()];
+  if (code) return code;
+  return state.trim().slice(0, 2).toUpperCase();
+}
+
+function getTaxInfo(billingState) {
+  // Same state as seller = intra-state = CGST+SGST, else IGST
+  const stateCode = getPOS(billingState);
+  const sellerCode = 'DL';
+  if (stateCode === sellerCode) {
+    return { tax: 'GST18', type: 'Tax Group', pct: 18 };
+  }
+  return { tax: 'IGST18', type: 'Tax Amount', pct: 18 };
+}
+
+function getGSTTreatment(gstin) {
+  const gstinRe = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  if (gstinRe.test(gstin)) return 'business_gst';
+  if (gstin) return 'business_none';
+  return 'business_none';
+}
+function correctCountry(shipCountry){
+  if (shipCountry === "IN") {
+    let shipCountry = "India";
+    return shipCountry;
+  }
+  return shipCountry;
+}
+
+// Flexible column finder — handles multiple naming conventions
+function col(row, ...keys) {
+  for (const k of keys) {
+    if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+    // Case-insensitive fallback
+    const lk = k.toLowerCase();
+    for (const rk of Object.keys(row)) {
+      if (rk.toLowerCase() === lk && row[rk] !== undefined && row[rk] !== null && row[rk] !== '') return row[rk];
+    }
+  }
+  return '';
+}
+
+// ── Shopify row → Zoho row ─────────────────────────────────────────────────
+function mapShopifyToZoho(row) {
+  // Order identification
+  const invoiceNum   = clean(col(row, 'Name', 'Order Name', 'Order ID', 'Voucher number'));
+  const createdAt    = col(row, 'Created at', 'Date', 'Order Date');
+  const invDate      = formatDate(new Date());
+
+  // Customer
+  const billingName  = clean(col(row, 'Billing Name', 'Customer Name', 'Name'));
+  const email        = clean(col(row, 'Email', 'Customer Email'));
+  const phone        = clean(col(row, 'Billing Phone', 'Shipping Phone', 'Phone', 'Customer Phone', 'MOBILE NO'));
+
+  // GSTIN
+  const gstin        = clean(col(row, 'GSTIN', 'GST Identification Number (GSTIN)'));
+  const gstTreatment = getGSTTreatment(gstin);
+
+  // Billing address
+  const billAddr1    = clean(col(row, 'Billing Address1', 'Billing Street', 'Billing Address Line 1'));
+  const billAddr2    = clean(col(row, 'Billing Address2', 'Billing Address Line 2'));
+  const billCity     = clean(col(row, 'Billing City', 'Billing city'));
+  const billState    = clean(col(row, 'Billing Province Name', 'Billing State', 'Billing Province'));
+  const billCountry  = clean(col(row, 'Billing Country')) || 'India';
+  const billPin      = cleanPin(col(row, 'Billing Zip', 'Billing Pin code'));
+
+  // Shipping address (fallback to billing)
+  const shipAddr1    = clean(col(row, 'Shipping Address1', 'Shipping Street', 'Shipping Address Line 1')) || billAddr1;
+  const shipAddr2    = clean(col(row, 'Shipping Address2', 'Shipping Address Line 2')) || billAddr2;
+  const shipCity     = clean(col(row, 'Shipping City')) || billCity;
+  const shipState    = clean(col(row, 'Shipping Province Name', 'Shipping State', 'Shipping Province')) || billState;
+  const shipCountry  = clean(col(row, 'Shipping Country')) || 'India';
+  const shipPin      = cleanPin(col(row, 'Shipping Zip', 'Shipping Pin code')) || billPin;
+
+  const placeOfSupply = getPOS(billState || shipState);
+  const taxInfo = getTaxInfo(billState || shipState);
+
+  // Item details
+  const sku       = clean(col(row, 'Lineitem sku', 'Item SKUs Code', 'SKU'));
+  const itemName  = clean(col(row, 'Lineitem name', 'Item SKU Name', 'Item Name'));
+  let   itemPrice = col(row, 'Lineitem price', 'Product per unit', 'Unit Item Price', 'Item Price');
+  if (itemPrice === '' || itemPrice === undefined) itemPrice = col(row, 'Total', 'Subtotal');
+  const qty       = col(row, 'Lineitem quantity', 'Item Quantity', 'Quantity') || 1;
+  let   hsn       = clean(col(row, 'HSN/SAC', 'Item HSN', 'HSN'));
+  if (hsn.endsWith('.0')) hsn = hsn.slice(0, -2);
+
+  // Display name with phone suffix if needed
+  const displayName = billingName;
+
+  // Discount
+  const discAmt = col(row, 'Discount Amount', 'Entity Discount Amount') || 0;
+
+  return {
+    "Invoice Number":                      invoiceNum,
+    "Invoice Date":                        invDate,
+    "Customer Name":                       displayName,
+    "GST Treatment":                       gstTreatment,
+    "GST Identification Number (GSTIN)":   gstin,
+    "Place of Supply":                     placeOfSupply,
+    "Sales order id":                      invoiceNum,
+    "Payment Terms":                       0,
+    "Payment Terms Label":                 "Paid",
+    "Due Date":                            invDate,
+    "Currency Code":                       CURRENCY,
+    "Exchange Rate":                       1,
+    "Account":                             "Sales",
+    "SKU":                                 sku,
+    "Item Name":                           itemName,
+    "Item Desc":                           "",
+    "Item Type":                           "goods",
+    "HSN/SAC":                             hsn,
+    "Quantity":                            qty,
+    "Usage unit":                          "pcs",
+    "Item Price":                          itemPrice,
+    "Is Inclusive Tax":                    true,
+    "Item Tax":                            taxInfo.tax,
+    "Item Tax Type":                       taxInfo.type,
+    "Item Tax %":                          taxInfo.pct,
+    "Is Discount Before Tax":              true,
+    "Entity Discount Percent":             0,
+    "Entity Discount Amount":              discAmt,
+    "Discount":                            0,
+    "Discount Amount":                     discAmt,
+    "Adjustment":                          0,
+    "Adjustment Description":             "Adjustment",
+    "Notes":                               "Thanks for your business.",
+    "Terms & Conditions":                  "The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.",
+    "E-Commerce Operator Name":            "Picknpack ecommerce",
+    "E-Commerce Operator GSTIN":           "07AAMCP7214N1ZW",
+    "Branch Name":                         BRANCH_NAME,
+    "Email":                               email,
+    "MOBILE NO":                           phone,
+    "Billing Address Line 1":              billAddr1,
+    "Billing Address Line 2":              billAddr2,
+    "Billing city":                        billCity,
+    "Billing State":                       billState,
+    "Billing Country":                     "India",
+    "Billing Pin code":                    billPin,
+    "Shipping Address Line 1":             shipAddr1,
+    "Shipping Address Line 2":             shipAddr2,
+    "Shipping City":                       shipCity,
+    "Shipping State":                      shipState,
+    "Shipping Country":                    "India",
+    "Shipping Pin code":                   shipPin,
+    "Accounts Receivable":                 "Accounts Receivable",
+    "Ack No.:":                            "",
+    "IRN :":                               ""
+  };
+}
+
+// ── DOM ────────────────────────────────────────────────────────────────────
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileInfo    = document.getElementById('fileInfo');
+const fileName    = document.getElementById('fileName');
+const removeFile  = document.getElementById('removeFile');
+const btnConvert  = document.getElementById('btnConvert');
+const btnDownload = document.getElementById('btnDownload');
+const statusBox   = document.getElementById('statusBox');
+const statusText  = document.getElementById('statusText');
+const statusIcon  = document.getElementById('statusIcon');
+const statsBox    = document.getElementById('statsBox');
+const spinner     = document.getElementById('spinner');
+const convertIcon = document.getElementById('convertIcon');
+
+let selectedFile = null;
+let outputWorkbook = null;
+
+function setStatus(type, msg) {
+  statusBox.className = 'status-box show ' + type;
+  statusText.textContent = msg;
+  const icons = {
+    processing: '<circle cx="12" cy="12" r="10" stroke="#92400e" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="#92400e" stroke-width="2" fill="none"/>',
+    success:    '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#166534"/>',
+    error:      '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#991b1b"/>'
+  };
+  statusIcon.innerHTML = icons[type] || '';
+}
+
+function hideStatus() { statusBox.className = 'status-box'; }
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.(xlsx?|csv)$/i)) {
+    setStatus('error', 'Please select an .xlsx, .xls, or .csv file!');
+    return;
+  }
+  selectedFile = file;
+  fileName.textContent = file.name;
+  fileInfo.classList.add('show');
+  dropZone.style.display = 'none';
+  btnConvert.disabled = false;
+  btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');
+  hideStatus();
+  outputWorkbook = null;
+}
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+removeFile.addEventListener('click', () => {
+  selectedFile = null; fileInput.value = '';
+  fileInfo.classList.remove('show');
+  dropZone.style.display = '';
+  btnConvert.disabled = true;
+  btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');
+  hideStatus(); outputWorkbook = null;
+});
+
+btnConvert.addEventListener('click', () => {
+  if (!selectedFile) return;
+  spinner.style.display = 'block';
+  convertIcon.style.display = 'none';
+  btnConvert.disabled = true;
+  setStatus('processing', 'Processing your Shopify orders...');
+  btnDownload.classList.remove('show');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellDates: false });
+
+      // Find best sheet
+      const sheetName = wb.SheetNames.find(s =>
+        /order|shopify|export/i.test(s)
+      ) || wb.SheetNames[0];
+
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!rows.length) throw new Error('No data found in the file!');
+
+      const zohoRows = [];
+      const invoiceSet = new Set();
+      let totalValue = 0;
+
+      rows.forEach(row => {
+        const zohoRow = mapShopifyToZoho(row);
+        zohoRows.push(zohoRow);
+        if (zohoRow["Invoice Number"]) invoiceSet.add(zohoRow["Invoice Number"]);
+        const price = parseFloat(zohoRow["Item Price"]) || 0;
+        const qty   = parseFloat(zohoRow["Quantity"]) || 1;
+        totalValue += price * qty;
+      });
+
+      // Build output workbook with headers in EXACT order
+      const newWb = XLSX.utils.book_new();
+      const orderedRows = zohoRows.map(r => {
+        const ordered = {};
+        ZOHO_HEADERS.forEach(h => { ordered[h] = r[h] !== undefined ? r[h] : ''; });
+        return ordered;
+      });
+
+      const newWs = XLSX.utils.json_to_sheet(orderedRows, { header: ZOHO_HEADERS });
+
+      // Column widths
+      const widths = [18,13,28,16,28,15,22,14,18,13,13,13,10,24,45,12,10,12,10,11,11,16,10,13,11,20,20,20,10,14,11,22,50,22,26,28,16,36,16,45,25,16,16,12,14,45,25,16,16,12,14,22,18,18];
+      newWs['!cols'] = widths.map(w => ({ wch: w }));
+
+      XLSX.utils.book_append_sheet(newWb, newWs, 'zoho_invoice');
+      outputWorkbook = newWb;
+
+      document.getElementById('statRows').textContent = zohoRows.length;
+      document.getElementById('statInvoices').textContent = invoiceSet.size;
+      document.getElementById('statAmount').textContent = '₹' + Math.round(totalValue).toLocaleString('en-IN');
+      statsBox.classList.add('show');
+
+      setStatus('success', `${zohoRows.length} rows converted successfully! Ready to download.`);
+      btnDownload.classList.add('show');
+    } catch(err) {
+      setStatus('error', 'Error: ' + err.message);
+    } finally {
+      spinner.style.display = 'none';
+      convertIcon.style.display = '';
+      btnConvert.disabled = false;
+    }
+  };
+  reader.readAsArrayBuffer(selectedFile);
+});
+
+btnDownload.addEventListener('click', () => {
+  if (!outputWorkbook) return;
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(outputWorkbook, `zoho_invoice_${today}.xlsx`);
+});
+</script>
+</body>
+</html>
