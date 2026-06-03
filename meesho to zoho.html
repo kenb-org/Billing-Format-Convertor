@@ -7,369 +7,232 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#caf0f8;
+  --bg2:#ade8f4;
+  --surface:rgba(255,255,255,0.45);
+  --surface2:rgba(255,255,255,0.28);
+  --glass:rgba(255,255,255,0.55);
+  --glass-border:rgba(255,255,255,0.75);
+  --neo-base:#b8e4f0;
+  --neo-light:#dff5fd;
+  --neo-dark:#8dbfce;
+  --neo-shadow:6px 6px 16px #8dbfce, -6px -6px 16px #dff5fd;
+  --neo-inset:inset 4px 4px 10px #8dbfce, inset -4px -4px 10px #dff5fd;
+  --neo-pressed:inset 3px 3px 8px #8dbfce, inset -3px -3px 8px #dff5fd;
+  --accent:#0077b6;
+  --accent2:#0096c7;
+  --accent-light:#00b4d8;
+  --accent-glow:rgba(0,119,182,0.22);
+  --green:#0f6e56;
+  --green-bg:rgba(15,110,86,0.10);
+  --red:#a32d2d;
+  --red-bg:rgba(163,45,45,0.10);
+  --amber:#854f0b;
+  --amber-bg:rgba(133,79,11,0.10);
+  --text:#03045e;
+  --text2:#023e8a;
+  --muted:#0077b6;
+  --muted2:#0096c7;
+  --radius:16px;
+  --radius-sm:10px;
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:linear-gradient(135deg,#caf0f8 0%,#ade8f4 40%,#90e0ef 70%,#48cae4 100%);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2rem 1rem;
+  color:var(--text);
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0,180,216,0.18) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0,119,182,0.15) 0%, transparent 50%);
+  pointer-events:none;
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.06) 1px,transparent 1px);
+  background-size:36px 36px;
+  pointer-events:none;
+}
+.wrap{width:100%;max-width:460px;position:relative;z-index:1;}
 
-  :root {
-    --bg: #0f1117;
-    --surface: #181c27;
-    --surface2: #1e2333;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --accent: #4f8ef7;
-    --accent-dim: rgba(79,142,247,0.12);
-    --accent-glow: rgba(79,142,247,0.25);
-    --green: #34d399;
-    --green-dim: rgba(52,211,153,0.10);
-    --red: #f87171;
-    --red-dim: rgba(248,113,113,0.10);
-    --amber: #fbbf24;
-    --amber-dim: rgba(251,191,36,0.10);
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --muted2: #9ca3af;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
+.header{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding:18px 22px;
+  background:var(--glass);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+  box-shadow:var(--neo-shadow);
+}
+.logo-mark{
+  width:46px;height:46px;
+  background:linear-gradient(135deg,#0096c7,#0077b6);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  box-shadow:4px 4px 10px rgba(0,119,182,0.35),-2px -2px 8px rgba(255,255,255,0.6);
+}
+.logo-mark svg{width:22px;height:22px;fill:#fff;}
+.header-text h1{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-0.2px;}
+.header-text p{font-size:11px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace;}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    color: var(--text);
-  }
+.panel{
+  background:var(--glass);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);
+  border-radius:20px;
+  box-shadow:var(--neo-shadow);
+  overflow:hidden;
+}
+.panel-body{padding:26px;}
 
-  /* subtle grid bg */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-  }
+.step-label{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.step-num{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--accent);
+  background:var(--neo-base);
+  box-shadow:var(--neo-shadow);
+  flex-shrink:0;
+}
+.step-text{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;}
 
-  .wrap {
-    width: 100%;
-    max-width: 480px;
-    position: relative;
-    z-index: 1;
-  }
+.drop-zone{
+  border:none;
+  border-radius:var(--radius);
+  padding:36px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:box-shadow 0.2s;
+  background:var(--surface2);
+  position:relative;
+  box-shadow:var(--neo-inset);
+}
+.drop-zone:hover,.drop-zone.dragover{
+  box-shadow:inset 5px 5px 12px #8dbfce,inset -5px -5px 12px #dff5fd, 0 0 0 2px rgba(0,119,182,0.3);
+}
+.drop-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon-wrap{
+  width:52px;height:52px;
+  border-radius:14px;
+  margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--neo-base);
+  box-shadow:var(--neo-shadow);
+}
+.drop-icon-wrap svg{width:24px;height:24px;fill:var(--accent);}
+.drop-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.drop-hint{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;}
+.drop-hint span{color:var(--accent2);font-weight:500;}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
-  }
+.divider{height:1px;background:rgba(0,119,182,0.12);margin:22px 0;}
 
-  .logo-mark {
-    width: 42px;
-    height: 42px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 0 24px var(--accent-glow);
-  }
+.file-chip{
+  display:none;align-items:center;gap:10px;
+  background:rgba(15,110,86,0.08);
+  border:1px solid rgba(15,110,86,0.2);
+  border-radius:var(--radius-sm);
+  padding:10px 14px;margin-top:14px;
+  backdrop-filter:blur(10px);
+}
+.file-chip.show{display:flex;}
+.file-chip-icon{width:18px;height:18px;fill:var(--green);flex-shrink:0;}
+.file-name{font-size:12px;font-family:'DM Mono',monospace;color:var(--green);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:2px 5px;border-radius:6px;transition:color 0.15s,background 0.15s;}
+.file-remove:hover{color:var(--red);background:var(--red-bg);}
 
-  .logo-mark svg { width: 20px; height: 20px; fill: #fff; }
+.stats{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 0;}
+.stats.show{display:grid;}
+.stat{
+  background:var(--neo-base);
+  border-radius:var(--radius-sm);
+  padding:14px 10px;text-align:center;
+  box-shadow:var(--neo-shadow);
+}
+.stat-val{font-size:22px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;letter-spacing:-0.5px;}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
 
-  .header-text h1 {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.2px;
-  }
+.status{display:none;align-items:center;gap:8px;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;font-weight:500;margin-top:16px;backdrop-filter:blur(10px);}
+.status.show{display:flex;}
+.status svg{width:15px;height:15px;flex-shrink:0;}
+.status.processing{background:var(--amber-bg);border:1px solid rgba(133,79,11,0.2);color:var(--amber);}
+.status.success{background:var(--green-bg);border:1px solid rgba(15,110,86,0.2);color:var(--green);}
+.status.error{background:var(--red-bg);border:1px solid rgba(163,45,45,0.2);color:var(--red);}
 
-  .header-text p {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 2px;
-    font-family: 'DM Mono', monospace;
-  }
+.panel-footer{
+  border-top:1px solid rgba(0,119,182,0.1);
+  padding:18px 26px;
+  display:flex;flex-direction:column;gap:10px;
+  background:rgba(255,255,255,0.25);
+  backdrop-filter:blur(12px);
+}
 
-  /* ── Panel ── */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-  }
+.btn{
+  width:100%;border:none;border-radius:var(--radius-sm);
+  padding:13px 16px;font-size:13px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:box-shadow 0.15s,transform 0.1s;
+  letter-spacing:0.1px;
+}
+.btn svg{width:16px;height:16px;fill:currentColor;flex-shrink:0;}
+.btn:active:not(:disabled){transform:scale(0.985);}
 
-  .panel-body { padding: 24px; }
+.btn-primary{
+  background:var(--neo-base);
+  color:var(--accent);
+  box-shadow:var(--neo-shadow);
+}
+.btn-primary:hover:not(:disabled){
+  box-shadow:8px 8px 20px #8dbfce,-8px -8px 20px #dff5fd;
+}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;box-shadow:var(--neo-inset);}
+.btn-primary:active:not(:disabled){box-shadow:var(--neo-pressed);}
 
-  /* ── Step label ── */
-  .step-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
+.btn-success{
+  display:none;
+  background:linear-gradient(135deg,rgba(15,110,86,0.15),rgba(29,158,117,0.12));
+  color:var(--green);
+  border:1px solid rgba(15,110,86,0.25);
+  backdrop-filter:blur(10px);
+  box-shadow:var(--neo-shadow);
+}
+.btn-success.show{display:flex;}
+.btn-success:hover{box-shadow:8px 8px 20px #8dbfce,-8px -8px 20px #dff5fd;}
+.btn-success:active{box-shadow:var(--neo-pressed);}
 
-  .step-num {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: var(--accent-dim);
-    border: 1px solid var(--accent);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    flex-shrink: 0;
-  }
+.spin{width:14px;height:14px;border:2px solid rgba(0,119,182,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin 0.65s linear infinite;display:none;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-  .step-text {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted2);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── Drop zone ── */
-  .drop-zone {
-    border: 1.5px dashed var(--border2);
-    border-radius: var(--radius);
-    padding: 36px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    background: var(--surface2);
-    position: relative;
-  }
-
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-  }
-
-  .drop-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-icon-wrap {
-    width: 48px; height: 48px;
-    background: var(--accent-dim);
-    border: 1px solid rgba(79,142,247,0.2);
-    border-radius: 12px;
-    margin: 0 auto 14px;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  .drop-icon-wrap svg { width: 22px; height: 22px; fill: var(--accent); }
-
-  .drop-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .drop-hint {
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
-
-  .drop-hint span {
-    color: var(--accent);
-  }
-
-  /* ── Divider ── */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 20px 0;
-  }
-
-  /* ── File chip ── */
-  .file-chip {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    background: var(--green-dim);
-    border: 1px solid rgba(52,211,153,0.2);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    margin-top: 12px;
-  }
-
-  .file-chip.show { display: flex; }
-
-  .file-chip-icon { width: 18px; height: 18px; fill: var(--green); flex-shrink: 0; }
-
-  .file-name {
-    font-size: 12px;
-    font-family: 'DM Mono', monospace;
-    color: var(--green);
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .file-remove {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 16px;
-    line-height: 1;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: color 0.15s, background 0.15s;
-  }
-
-  .file-remove:hover { color: var(--red); background: var(--red-dim); }
-
-  /* ── Stats ── */
-  .stats {
-    display: none;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 16px 0 0;
-  }
-
-  .stats.show { display: grid; }
-
-  .stat {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px 10px;
-    text-align: center;
-  }
-
-  .stat-val {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    letter-spacing: -0.5px;
-  }
-
-  .stat-lbl {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
-
-  /* ── Status bar ── */
-  .status {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    margin-top: 16px;
-  }
-
-  .status.show { display: flex; }
-  .status svg { width: 15px; height: 15px; flex-shrink: 0; }
-
-  .status.processing { background: var(--amber-dim); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); }
-  .status.success    { background: var(--green-dim);  border: 1px solid rgba(52,211,153,0.2); color: var(--green); }
-  .status.error      { background: var(--red-dim);    border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
-
-  /* ── Panel footer ── */
-  .panel-footer {
-    border-top: 1px solid var(--border);
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  /* ── Buttons ── */
-  .btn {
-    width: 100%;
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
-    letter-spacing: 0.1px;
-  }
-
-  .btn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
-
-  .btn:active:not(:disabled) { transform: scale(0.985); }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 16px var(--accent-glow);
-  }
-
-  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
-  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
-
-  .btn-success {
-    display: none;
-    background: var(--green);
-    color: #0a1a12;
-    box-shadow: 0 4px 16px rgba(52,211,153,0.2);
-  }
-
-  .btn-success.show { display: flex; }
-  .btn-success:hover { opacity: 0.88; }
-
-  /* ── Spinner ── */
-  .spin {
-    width: 14px; height: 14px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.65s linear infinite;
-    display: none;
-    flex-shrink: 0;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Footer note ── */
-  .foot-note {
-    text-align: center;
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .foot-note svg { width: 12px; height: 12px; fill: var(--muted); }
+.foot-note{
+  text-align:center;font-size:11px;color:var(--muted2);
+  font-family:'DM Mono',monospace;margin-top:18px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:rgba(255,255,255,0.3);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.6);
+  border-radius:10px;
+  padding:10px 16px;
+  box-shadow:3px 3px 8px #8dbfce,-3px -3px 8px #dff5fd;
+}
+.foot-note svg{width:12px;height:12px;fill:var(--muted2);}
 </style>
 </head>
 <body>
-
 <div class="wrap">
 
   <div class="header">
@@ -385,7 +248,6 @@
   <div class="panel">
     <div class="panel-body">
 
-      <!-- Step 1 -->
       <div class="step-label">
         <div class="step-num">1</div>
         <div class="step-text">Upload Orders File</div>
@@ -400,14 +262,12 @@
         <div class="drop-hint">or <span>click to browse</span> &nbsp;·&nbsp; .xlsx only</div>
       </div>
 
-      <!-- File chip -->
       <div class="file-chip" id="fileInfo">
         <svg class="file-chip-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
         <span class="file-name" id="fileName"></span>
         <button class="file-remove" id="removeFile" title="Remove file">&#x2715;</button>
       </div>
 
-      <!-- Stats -->
       <div class="stats" id="statsBox">
         <div class="stat">
           <div class="stat-val" id="statRows">0</div>
@@ -423,7 +283,6 @@
         </div>
       </div>
 
-      <!-- Status -->
       <div class="status" id="statusBox">
         <svg id="statusIcon" viewBox="0 0 24 24"></svg>
         <span id="statusText"></span>
@@ -431,11 +290,8 @@
 
     </div>
 
-    <!-- Panel footer with buttons -->
     <div class="panel-footer">
-
-      <!-- Step 2 -->
-      <div class="step-label" style="margin-bottom:6px;">
+      <div class="step-label" style="margin-bottom:4px;">
         <div class="step-num">2</div>
         <div class="step-text">Convert &amp; Download</div>
       </div>
@@ -450,286 +306,121 @@
         <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         Download Zoho File
       </button>
-
     </div>
   </div>
 
   <div class="foot-note">
     <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>
-    All processing happens in your browser — no data is sent to any server
+    All processing happens in your browser — no data sent to any server
   </div>
 
 </div>
 
 <script>
-const STATE_CODES = {
-  'Andhra Pradesh':'AD','Arunachal Pradesh':'AR','Assam':'AS','Bihar':'BR',
-  'Chhattisgarh':'CG','Goa':'GA','Gujarat':'GJ','Haryana':'HR',
-  'Himachal Pradesh':'HP','Jharkhand':'JH','Karnataka':'KA','Kerala':'KL',
-  'Madhya Pradesh':'MP','Maharashtra':'MH','Manipur':'MN','Meghalaya':'ML',
-  'Mizoram':'MZ','Nagaland':'NL','Odisha':'OD','Punjab':'PB',
-  'Rajasthan':'RJ','Sikkim':'SK','Tamil Nadu':'TN','Telangana':'TS',
-  'Tripura':'TR','Uttar Pradesh':'UP','Uttarakhand':'UK','West Bengal':'WB',
-  'Delhi':'DL','Chandigarh':'CH','Jammu and Kashmir':'JK','Ladakh':'LA',
-  'West bengal':'WB','DELHI':'DL','Uttrakhand':'UK','Jharkhand':'JH',
-};
+const STATE_CODES={'Andhra Pradesh':'AD','Arunachal Pradesh':'AR','Assam':'AS','Bihar':'BR','Chhattisgarh':'CG','Goa':'GA','Gujarat':'GJ','Haryana':'HR','Himachal Pradesh':'HP','Jharkhand':'JH','Karnataka':'KA','Kerala':'KL','Madhya Pradesh':'MP','Maharashtra':'MH','Manipur':'MN','Meghalaya':'ML','Mizoram':'MZ','Nagaland':'NL','Odisha':'OD','Punjab':'PB','Rajasthan':'RJ','Sikkim':'SK','Tamil Nadu':'TN','Telangana':'TS','Tripura':'TR','Uttar Pradesh':'UP','Uttarakhand':'UK','West Bengal':'WB','Delhi':'DL','Chandigarh':'CH','Jammu and Kashmir':'JK','Ladakh':'LA','West bengal':'WB','DELHI':'DL','Uttrakhand':'UK'};
+const NOTES="Thanks for your business.";
+const TERMS="The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.";
 
-const NOTES = "Thanks for your business.";
-const TERMS = "The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.";
+const dropZone=document.getElementById('dropZone');
+const fileInput=document.getElementById('fileInput');
+const fileInfo=document.getElementById('fileInfo');
+const fileName=document.getElementById('fileName');
+const removeFile=document.getElementById('removeFile');
+const btnConvert=document.getElementById('btnConvert');
+const btnDownload=document.getElementById('btnDownload');
+const statusBox=document.getElementById('statusBox');
+const statusText=document.getElementById('statusText');
+const statusIcon=document.getElementById('statusIcon');
+const statsBox=document.getElementById('statsBox');
+const spinner=document.getElementById('spinner');
+const convertIcon=document.getElementById('convertIcon');
 
-const dropZone    = document.getElementById('dropZone');
-const fileInput   = document.getElementById('fileInput');
-const fileInfo    = document.getElementById('fileInfo');
-const fileName    = document.getElementById('fileName');
-const removeFile  = document.getElementById('removeFile');
-const btnConvert  = document.getElementById('btnConvert');
-const btnDownload = document.getElementById('btnDownload');
-const statusBox   = document.getElementById('statusBox');
-const statusText  = document.getElementById('statusText');
-const statusIcon  = document.getElementById('statusIcon');
-const statsBox    = document.getElementById('statsBox');
-const spinner     = document.getElementById('spinner');
-const convertIcon = document.getElementById('convertIcon');
+let selectedFile=null,outputWorkbook=null;
 
-let selectedFile = null;
-let outputWorkbook = null;
+function setStatus(type,msg){
+  statusBox.className='status show '+type;
+  statusText.textContent=msg;
+  if(type==='processing'){statusIcon.innerHTML='<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>';}
+  else if(type==='success'){statusIcon.innerHTML='<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>';}
+  else{statusIcon.innerHTML='<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>';}
+}
+function hideStatus(){statusBox.className='status';}
+function clean(val){if(val===null||val===undefined)return '';const s=String(val).trim();if(s==='nan'||s==='undefined'||s==='-')return '';return s;}
+function cleanPin(val){let s=clean(val);if(s.endsWith('.0'))s=s.slice(0,-2);return s;}
+function formatDate(val){if(!val)return '';if(typeof val==='number'){const d=new Date(Math.round((val-25569)*86400*1000));return d.toISOString().slice(0,10);}const d=new Date(val);if(!isNaN(d))return d.toISOString().slice(0,10);return String(val).slice(0,10);}
+function getPOS(state){if(!state)return '';return STATE_CODES[state.trim()]||state.trim().slice(0,2).toUpperCase();}
+function getTaxInfo(row){const cgst=clean(row['CGST']);const shippingState=clean(row['*Shipping State']).toLowerCase();const sellerState=clean(row['Seller State']).toLowerCase();if(shippingState===sellerState||(cgst&&cgst!=='')){return['GST18','Tax Group'];}return['IGST18','ItemAmount'];}
 
-function setStatus(type, msg) {
-  statusBox.className = 'status show ' + type;
-  statusText.textContent = msg;
-  if (type === 'processing') {
-    statusIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>';
-  } else if (type === 'success') {
-    statusIcon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>';
-  } else {
-    statusIcon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>';
-  }
+function handleFile(file){
+  if(!file)return;
+  if(!file.name.match(/\.xlsx?$/i)){setStatus('error','Please select an .xlsx file only.');return;}
+  selectedFile=file;fileName.textContent=file.name;fileInfo.classList.add('show');
+  dropZone.style.display='none';btnConvert.disabled=false;btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');hideStatus();outputWorkbook=null;
 }
 
-function hideStatus() { statusBox.className = 'status'; }
-
-function clean(val) {
-  if (val === null || val === undefined) return '';
-  const s = String(val).trim();
-  if (s === 'nan' || s === 'undefined' || s === '-') return '';
-  return s;
-}
-
-function cleanPin(val) {
-  let s = clean(val);
-  if (s.endsWith('.0')) s = s.slice(0, -2);
-  return s;
-}
-
-function formatDate(val) {
-  if (!val) return '';
-  if (typeof val === 'number') {
-    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return d.toISOString().slice(0, 10);
-  }
-  const d = new Date(val);
-  if (!isNaN(d)) return d.toISOString().slice(0, 10);
-  return String(val).slice(0, 10);
-}
-
-function getPOS(state) {
-  if (!state) return '';
-  return STATE_CODES[state.trim()] || state.trim().slice(0, 2).toUpperCase();
-}
-
-function getTaxInfo(row) {
-  const cgst = clean(row['CGST']);
-  const shippingState = clean(row['*Shipping State']).toLowerCase();
-  const sellerState = clean(row['Seller State']).toLowerCase();
-  if (shippingState === sellerState || (cgst && cgst !== '')) {
-    return ['GST18', 'Tax Group'];
-  }
-  return ['IGST18', 'ItemAmount'];
-}
-
-function handleFile(file) {
-  if (!file) return;
-  if (!file.name.match(/\.xlsx?$/i)) {
-    setStatus('error', 'Please select an .xlsx file only.');
-    return;
-  }
-  selectedFile = file;
-  fileName.textContent = file.name;
-  fileInfo.classList.add('show');
-  dropZone.style.display = 'none';
-  btnConvert.disabled = false;
-  btnDownload.classList.remove('show');
-  statsBox.classList.remove('show');
-  hideStatus();
-  outputWorkbook = null;
-}
-
-fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
-
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  handleFile(e.dataTransfer.files[0]);
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('dragover');handleFile(e.dataTransfer.files[0]);});
+removeFile.addEventListener('click',()=>{
+  selectedFile=null;fileInput.value='';fileInfo.classList.remove('show');
+  dropZone.style.display='';btnConvert.disabled=true;btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');hideStatus();outputWorkbook=null;
 });
 
-removeFile.addEventListener('click', () => {
-  selectedFile = null;
-  fileInput.value = '';
-  fileInfo.classList.remove('show');
-  dropZone.style.display = '';
-  btnConvert.disabled = true;
-  btnDownload.classList.remove('show');
-  statsBox.classList.remove('show');
-  hideStatus();
-  outputWorkbook = null;
-});
-
-btnConvert.addEventListener('click', () => {
-  if (!selectedFile) return;
-  spinner.style.display = 'block';
-  convertIcon.style.display = 'none';
-  btnConvert.disabled = true;
-  setStatus('processing', 'Processing your file, please wait...');
-  btnDownload.classList.remove('show');
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array', cellDates: false });
-
-      const sheetName = wb.SheetNames.find(s => s.toLowerCase().includes('order')) || wb.SheetNames[0];
-      const ws = wb.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-      if (!rows.length) throw new Error('No data found in the Orders sheet.');
-
-      const zohoRows = [];
-      const invoiceSet = new Set();
-      let sampleDate = '';
-
-      rows.forEach(row => {
-        const invDate = formatDate(row['Date '] || row['Date']);
-        if (!sampleDate && invDate) sampleDate = invDate.slice(5).split('-').reverse().join('/');
-
-        const custName = clean(row['Customer Name']);
-        const phone = clean(row['Customer Phone']);
-        const gstin = clean(row['GSTIN']);
-        const displayName = `${custName}-${phone}`;
-
-        const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-        const gstTreatment = gstinRegex.test(gstin) ? 'business_gst' : 'business_none';
-
-        const shippingState = clean(row['*Shipping State']);
-        const pos = getPOS(shippingState);
-        const [itemTax, itemTaxType] = getTaxInfo(row);
-
-        const addr1 = clean(row['*Shipping Address Line1']);
-        const addr2 = clean(row['Shipping Address Line2']);
-        const city = clean(row['*Shipping City']);
-        const shipPin = cleanPin(row['*Shipping Pincode']);
-
-        let itemPrice = row['Product per unit'];
-        if (itemPrice === '' || itemPrice === null || itemPrice === undefined) {
-          itemPrice = row['Unit Item Price'];
-        }
-
-        let hsn = clean(row['Item HSN']);
-        if (hsn.endsWith('.0')) hsn = hsn.slice(0, -2);
-
+btnConvert.addEventListener('click',()=>{
+  if(!selectedFile)return;
+  spinner.style.display='block';convertIcon.style.display='none';btnConvert.disabled=true;
+  setStatus('processing','Processing your file, please wait...');btnDownload.classList.remove('show');
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:false});
+      const sheetName=wb.SheetNames.find(s=>s.toLowerCase().includes('order'))||wb.SheetNames[0];
+      const ws=wb.Sheets[sheetName];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length)throw new Error('No data found in the Orders sheet.');
+      const zohoRows=[];const invoiceSet=new Set();let sampleDate='';
+      rows.forEach(row=>{
+        const invDate=formatDate(row['Date ']||row['Date']);
+        if(!sampleDate&&invDate)sampleDate=invDate.slice(5).split('-').reverse().join('/');
+        const custName=clean(row['Customer Name']);const phone=clean(row['Customer Phone']);
+        const gstin=clean(row['GSTIN']);const displayName=`${custName}-${phone}`;
+        const gstinRegex=/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        const gstTreatment=gstinRegex.test(gstin)?'business_gst':'business_none';
+        const shippingState=clean(row['*Shipping State']);const pos=getPOS(shippingState);
+        const[itemTax,itemTaxType]=getTaxInfo(row);
+        const addr1=clean(row['*Shipping Address Line1']);const addr2=clean(row['Shipping Address Line2']);
+        const city=clean(row['*Shipping City']);const shipPin=cleanPin(row['*Shipping Pincode']);
+        let itemPrice=row['Product per unit'];
+        if(itemPrice===''||itemPrice===null||itemPrice===undefined){itemPrice=row['Unit Item Price'];}
+        let hsn=clean(row['Item HSN']);if(hsn.endsWith('.0'))hsn=hsn.slice(0,-2);
         invoiceSet.add(clean(row['Voucher number']));
-
-        zohoRows.push({
-          'Invoice Number': clean(row['Voucher number']),
-          'Invoice Date': invDate,
-          'Customer Name': displayName,
-          'GST Treatment': gstTreatment,
-          'GST Identification Number (GSTIN)': gstin,
-          'Place of Supply': pos,
-          'Sales order id': clean(row['Order ID']),
-          'Payment Terms': 0,
-          'Payment Terms Label': 'Paid',
-          'Due Date': invDate,
-          'Currency Code': 'INR',
-          'Exchange Rate': 1,
-          'Account': 'Sales',
-          'SKU': clean(row['Item SKUs Code']),
-          'Item Name': clean(row['Item SKU Name']),
-          'Item Desc': '',
-          'Item Type': 'goods',
-          'HSN/SAC': hsn,
-          'Quantity': row['Item Quantity'] || 1,
-          'Usage unit': 'pcs',
-          'Item Price': itemPrice,
-          'Is Inclusive Tax': false,
-          'Item Tax': itemTax,
-          'Item Tax Type': itemTaxType,
-          'Item Tax %': 18,
-          'Is Discount Before Tax': true,
-          'Entity Discount Percent': 0,
-          'Entity Discount Amount': 0,
-          'Discount': 0,
-          'Discount Amount': 0,
-          'Adjustment': 0,
-          'Adjustment Description': 'Adjustment',
-          'Notes': NOTES,
-          'Terms & Conditions': TERMS,
-          'E-Commerce Operator Name': 'Picknpack ecommerce',
-          'E-Commerce Operator GSTIN': '07AAMCP7214N1ZW',
-          'Branch Name': 'Delhi- Online',
-          'Email': clean(row['Customer Email']),
-          'MOBILE NO': phone,
-          'Billing Address Line 1': addr1,
-          'Billing Address Line 2': addr2,
-          'Billing city': city,
-          'Billing State': shippingState,
-          'Billing Country': 'India',
-          'Billing Pin code': shipPin,
-          'Shipping Address Line 1': addr1,
-          'Shipping Address Line 2': addr2,
-          'Shipping City': city,
-          'Shipping State': shippingState,
-          'Shipping Country': 'India',
-          'Shipping Pin code': shipPin,
-          'Accounts Receivable': 'Accounts Receivable',
-          'Ack No.:': '',
-          'IRN :': '',
-        });
+        zohoRows.push({'Invoice Number':clean(row['Voucher number']),'Invoice Date':invDate,'Customer Name':displayName,'GST Treatment':gstTreatment,'GST Identification Number (GSTIN)':gstin,'Place of Supply':pos,'Sales order id':clean(row['Order ID']),'Payment Terms':0,'Payment Terms Label':'Paid','Due Date':invDate,'Currency Code':'INR','Exchange Rate':1,'Account':'Sales','SKU':clean(row['Item SKUs Code']),'Item Name':clean(row['Item SKU Name']),'Item Desc':'','Item Type':'goods','HSN/SAC':hsn,'Quantity':row['Item Quantity']||1,'Usage unit':'pcs','Item Price':itemPrice,'Is Inclusive Tax':false,'Item Tax':itemTax,'Item Tax Type':itemTaxType,'Item Tax %':18,'Is Discount Before Tax':true,'Entity Discount Percent':0,'Entity Discount Amount':0,'Discount':0,'Discount Amount':0,'Adjustment':0,'Adjustment Description':'Adjustment','Notes':NOTES,'Terms & Conditions':TERMS,'E-Commerce Operator Name':'Picknpack ecommerce','E-Commerce Operator GSTIN':'07AAMCP7214N1ZW','Branch Name':'Delhi- Online','Email':clean(row['Customer Email']),'MOBILE NO':phone,'Billing Address Line 1':addr1,'Billing Address Line 2':addr2,'Billing city':city,'Billing State':shippingState,'Billing Country':'India','Billing Pin code':shipPin,'Shipping Address Line 1':addr1,'Shipping Address Line 2':addr2,'Shipping City':city,'Shipping State':shippingState,'Shipping Country':'India','Shipping Pin code':shipPin,'Accounts Receivable':'Accounts Receivable','Ack No.:':'','IRN :':''});
       });
-
-      const newWb = XLSX.utils.book_new();
-      const newWs = XLSX.utils.json_to_sheet(zohoRows);
-
-      const colWidths = [18,13,28,14,22,14,26,14,16,13,12,13,10,15,45,10,10,12,10,11,11,15,10,13,11,20,22,22,10,14,11,20,20,20,22,22,14,45,30,13,16,15,45,16,16,10,10,18,14,18,14];
-      newWs['!cols'] = colWidths.map(w => ({ wch: w }));
-
-      XLSX.utils.book_append_sheet(newWb, newWs, 'zoho formate');
-      outputWorkbook = newWb;
-
-      document.getElementById('statRows').textContent = zohoRows.length;
-      document.getElementById('statInvoices').textContent = invoiceSet.size;
-      document.getElementById('statDate').textContent = sampleDate || '—';
+      const newWb=XLSX.utils.book_new();const newWs=XLSX.utils.json_to_sheet(zohoRows);
+      const colWidths=[18,13,28,14,22,14,26,14,16,13,12,13,10,15,45,10,10,12,10,11,11,15,10,13,11,20,22,22,10,14,11,20,20,20,22,22,14,45,30,13,16,15,45,16,16,10,10,18,14,18,14];
+      newWs['!cols']=colWidths.map(w=>({wch:w}));
+      XLSX.utils.book_append_sheet(newWb,newWs,'zoho formate');
+      outputWorkbook=newWb;
+      document.getElementById('statRows').textContent=zohoRows.length;
+      document.getElementById('statInvoices').textContent=invoiceSet.size;
+      document.getElementById('statDate').textContent=sampleDate||'—';
       statsBox.classList.add('show');
-
-      setStatus('success', `${zohoRows.length} rows converted successfully. Ready to download.`);
+      setStatus('success',`${zohoRows.length} rows converted successfully. Ready to download.`);
       btnDownload.classList.add('show');
-    } catch(err) {
-      setStatus('error', 'Error: ' + err.message);
-    } finally {
-      spinner.style.display = 'none';
-      convertIcon.style.display = '';
-      btnConvert.disabled = false;
-    }
+    }catch(err){setStatus('error','Error: '+err.message);}
+    finally{spinner.style.display='none';convertIcon.style.display='';btnConvert.disabled=false;}
   };
   reader.readAsArrayBuffer(selectedFile);
 });
 
-btnDownload.addEventListener('click', () => {
-  if (!outputWorkbook) return;
-  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  XLSX.writeFile(outputWorkbook, `zoho_import_${today}.xlsx`);
+btnDownload.addEventListener('click',()=>{
+  if(!outputWorkbook)return;
+  const today=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(outputWorkbook,`zoho_import_${today}.xlsx`);
 });
 </script>
 </body>
