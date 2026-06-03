@@ -1,70 +1,155 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zoho Invoice Converter</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #4f8ef7;
+    --accent-dim: rgba(79,142,247,0.12);
+    --accent-glow: rgba(79,142,247,0.25);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.10);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.10);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.10);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --muted2: #9ca3af;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
 
   body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f0f4f8;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 2rem 1rem;
+    color: var(--text);
   }
 
-  .card {
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
-    padding: 2.5rem 2.5rem 2rem;
-    max-width: 520px;
+  /* subtle grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .wrap {
     width: 100%;
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
   }
 
-  .logo {
+  /* ── Header ── */
+  .header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 1.8rem;
+    gap: 14px;
+    margin-bottom: 28px;
   }
 
-  .logo-icon {
-    width: 44px;
-    height: 44px;
-    background: #1a56db;
-    border-radius: 12px;
+  .logo-mark {
+    width: 42px;
+    height: 42px;
+    background: var(--accent);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 24px var(--accent-glow);
   }
 
-  .logo-icon svg { width: 24px; height: 24px; fill: #fff; }
+  .logo-mark svg { width: 20px; height: 20px; fill: #fff; }
 
-  .logo-text h1 { font-size: 18px; font-weight: 700; color: #111; }
-  .logo-text p { font-size: 13px; color: #6b7280; margin-top: 2px; }
+  .header-text h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
 
+  .header-text p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .panel-body { padding: 24px; }
+
+  /* ── Step label ── */
+  .step-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Drop zone ── */
   .drop-zone {
-    border: 2px dashed #c7d2fe;
-    border-radius: 14px;
-    padding: 2.5rem 1.5rem;
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 36px 20px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
-    background: #f8f9ff;
-    margin-bottom: 1.5rem;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface2);
     position: relative;
   }
 
   .drop-zone:hover, .drop-zone.dragover {
-    border-color: #1a56db;
-    background: #eff6ff;
+    border-color: var(--accent);
+    background: var(--accent-dim);
   }
 
   .drop-zone input[type="file"] {
@@ -76,195 +161,304 @@
     height: 100%;
   }
 
-  .drop-icon {
-    width: 48px;
-    height: 48px;
-    background: #dbeafe;
+  .drop-icon-wrap {
+    width: 48px; height: 48px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,142,247,0.2);
     border-radius: 12px;
-    margin: 0 auto 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  .drop-icon svg { width: 26px; height: 26px; fill: #1a56db; }
+  .drop-icon-wrap svg { width: 22px; height: 22px; fill: var(--accent); }
 
-  .drop-title { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 4px; }
-  .drop-sub { font-size: 13px; color: #6b7280; }
+  .drop-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
 
-  .file-info {
+  .drop-hint {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .drop-hint span {
+    color: var(--accent);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── File chip ── */
+  .file-chip {
     display: none;
     align-items: center;
     gap: 10px;
-    background: #f0fdf4;
-    border: 1px solid #86efac;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 1.5rem;
+    background: var(--green-dim);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-top: 12px;
   }
 
-  .file-info.show { display: flex; }
-  .file-info svg { width: 20px; height: 20px; fill: #16a34a; flex-shrink: 0; }
-  .file-name { font-size: 13px; font-weight: 500; color: #166534; flex: 1; word-break: break-all; }
-  .file-remove { background: none; border: none; cursor: pointer; color: #6b7280; font-size: 18px; line-height: 1; padding: 0 4px; }
-  .file-remove:hover { color: #ef4444; }
+  .file-chip.show { display: flex; }
 
-  .btn-convert {
-    width: 100%;
-    background: #1a56db;
-    color: #fff;
+  .file-chip-icon { width: 18px; height: 18px; fill: var(--green); flex-shrink: 0; }
+
+  .file-name {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--green);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-remove {
+    background: none;
     border: none;
-    border-radius: 12px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 1rem;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
   }
 
-  .btn-convert:hover:not(:disabled) { background: #1645b8; }
-  .btn-convert:active:not(:disabled) { transform: scale(0.98); }
-  .btn-convert:disabled { background: #93c5fd; cursor: not-allowed; }
-  .btn-convert svg { width: 18px; height: 18px; fill: #fff; }
+  .file-remove:hover { color: var(--red); background: var(--red-dim); }
 
-  .status-box {
-    display: none;
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 1rem;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .status-box.show { display: flex; }
-  .status-box.processing { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
-  .status-box.success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
-  .status-box.error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
-  .status-box svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-  .btn-download {
-    display: none;
-    width: 100%;
-    background: #16a34a;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 1rem;
-  }
-
-  .btn-download.show { display: flex; }
-  .btn-download:hover { background: #15803d; }
-  .btn-download svg { width: 18px; height: 18px; fill: #fff; }
-
+  /* ── Stats ── */
   .stats {
     display: none;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 16px 0 0;
   }
 
   .stats.show { display: grid; }
 
-  .stat-card {
-    background: #f8fafc;
-    border-radius: 10px;
-    padding: 12px;
+  .stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
     text-align: center;
-    border: 1px solid #e2e8f0;
   }
 
-  .stat-num { font-size: 22px; font-weight: 700; color: #1a56db; }
-  .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .stat-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.5px;
+  }
 
-  .footer { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 1rem; }
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
 
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,0.4);
+  /* ── Status bar ── */
+  .status {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 16px;
+  }
+
+  .status.show { display: flex; }
+  .status svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .status.processing { background: var(--amber-dim); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); }
+  .status.success    { background: var(--green-dim);  border: 1px solid rgba(52,211,153,0.2); color: var(--green); }
+  .status.error      { background: var(--red-dim);    border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+
+  /* ── Panel footer ── */
+  .panel-footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    letter-spacing: 0.1px;
+  }
+
+  .btn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+
+  .btn:active:not(:disabled) { transform: scale(0.985); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+  .btn-success {
+    display: none;
+    background: var(--green);
+    color: #0a1a12;
+    box-shadow: 0 4px 16px rgba(52,211,153,0.2);
+  }
+
+  .btn-success.show { display: flex; }
+  .btn-success:hover { opacity: 0.88; }
+
+  /* ── Spinner ── */
+  .spin {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
     border-top-color: #fff;
     border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+    animation: spin 0.65s linear infinite;
     display: none;
+    flex-shrink: 0;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Footer note ── */
+  .foot-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .foot-note svg { width: 12px; height: 12px; fill: var(--muted); }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <div class="logo">
-    <div class="logo-icon">
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo-mark">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
     </div>
-    <div class="logo-text">
+    <div class="header-text">
       <h1>Zoho Invoice Converter</h1>
-      <p>Orders file → Zoho format, ek click mein</p>
+      <p>orders → zoho format · one click</p>
     </div>
   </div>
 
-  <div class="drop-zone" id="dropZone">
-    <input type="file" id="fileInput" accept=".xlsx,.xls" />
-    <div class="drop-icon">
-      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+  <div class="panel">
+    <div class="panel-body">
+
+      <!-- Step 1 -->
+      <div class="step-label">
+        <div class="step-num">1</div>
+        <div class="step-text">Upload Orders File</div>
+      </div>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div class="drop-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        </div>
+        <div class="drop-title">Drop your file here</div>
+        <div class="drop-hint">or <span>click to browse</span> &nbsp;·&nbsp; .xlsx only</div>
+      </div>
+
+      <!-- File chip -->
+      <div class="file-chip" id="fileInfo">
+        <svg class="file-chip-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        <span class="file-name" id="fileName"></span>
+        <button class="file-remove" id="removeFile" title="Remove file">&#x2715;</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats" id="statsBox">
+        <div class="stat">
+          <div class="stat-val" id="statRows">0</div>
+          <div class="stat-lbl">Total Rows</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statInvoices">0</div>
+          <div class="stat-lbl">Invoices</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statDate">—</div>
+          <div class="stat-lbl">Date</div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="status" id="statusBox">
+        <svg id="statusIcon" viewBox="0 0 24 24"></svg>
+        <span id="statusText"></span>
+      </div>
+
     </div>
-    <div class="drop-title">Orders file yahan drop karo</div>
-    <div class="drop-sub">ya click karke select karo (.xlsx file)</div>
+
+    <!-- Panel footer with buttons -->
+    <div class="panel-footer">
+
+      <!-- Step 2 -->
+      <div class="step-label" style="margin-bottom:6px;">
+        <div class="step-num">2</div>
+        <div class="step-text">Convert &amp; Download</div>
+      </div>
+
+      <button class="btn btn-primary" id="btnConvert" disabled>
+        <div class="spin" id="spinner"></div>
+        <svg id="convertIcon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6a6 6 0 0 1-5.65-4H4.26A8 8 0 0 0 12 20c4.42 0 8-3.58 8-8h3l-4-4zM9 8a6 6 0 0 1 5.65 4H16.74A8 8 0 0 0 12 4C7.58 4 4 7.58 4 12H1l4 4 4-4H6c0-3.31 2.69-6 6-6z"/></svg>
+        Convert to Zoho Format
+      </button>
+
+      <button class="btn btn-success" id="btnDownload">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Download Zoho File
+      </button>
+
+    </div>
   </div>
 
-  <div class="file-info" id="fileInfo">
-    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-    <span class="file-name" id="fileName"></span>
-    <button class="file-remove" id="removeFile" title="Remove">&#x2715;</button>
+  <div class="foot-note">
+    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>
+    All processing happens in your browser — no data is sent to any server
   </div>
 
-  <div class="stats" id="statsBox">
-    <div class="stat-card">
-      <div class="stat-num" id="statRows">0</div>
-      <div class="stat-label">Total Rows</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="statInvoices">0</div>
-      <div class="stat-label">Invoices</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="statDate">—</div>
-      <div class="stat-label">Date</div>
-    </div>
-  </div>
-
-  <div class="status-box" id="statusBox">
-    <svg id="statusIcon" viewBox="0 0 24 24"></svg>
-    <span id="statusText"></span>
-  </div>
-
-  <button class="btn-convert" id="btnConvert" disabled>
-    <div class="spinner" id="spinner"></div>
-    <svg id="convertIcon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6a6 6 0 0 1-5.65-4H4.26A8 8 0 0 0 12 20c4.42 0 8-3.58 8-8h3l-4-4zM9 8a6 6 0 0 1 5.65 4H16.74A8 8 0 0 0 12 4C7.58 4 4 7.58 4 12H1l4 4 4-4H6c0-3.31 2.69-6 6-6z"/></svg>
-    Convert to Zoho Format
-  </button>
-
-  <button class="btn-download" id="btnDownload">
-    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-    Zoho File Download Karo
-  </button>
-
-  <div class="footer">File aapke browser mein hi process hoti hai — koi data server pe nahi jata</div>
 </div>
 
 <script>
@@ -283,36 +477,36 @@ const STATE_CODES = {
 const NOTES = "Thanks for your business.";
 const TERMS = "The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.";
 
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const fileInfo = document.getElementById('fileInfo');
-const fileName = document.getElementById('fileName');
-const removeFile = document.getElementById('removeFile');
-const btnConvert = document.getElementById('btnConvert');
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileInfo    = document.getElementById('fileInfo');
+const fileName    = document.getElementById('fileName');
+const removeFile  = document.getElementById('removeFile');
+const btnConvert  = document.getElementById('btnConvert');
 const btnDownload = document.getElementById('btnDownload');
-const statusBox = document.getElementById('statusBox');
-const statusText = document.getElementById('statusText');
-const statusIcon = document.getElementById('statusIcon');
-const statsBox = document.getElementById('statsBox');
-const spinner = document.getElementById('spinner');
+const statusBox   = document.getElementById('statusBox');
+const statusText  = document.getElementById('statusText');
+const statusIcon  = document.getElementById('statusIcon');
+const statsBox    = document.getElementById('statsBox');
+const spinner     = document.getElementById('spinner');
 const convertIcon = document.getElementById('convertIcon');
 
 let selectedFile = null;
 let outputWorkbook = null;
 
 function setStatus(type, msg) {
-  statusBox.className = 'status-box show ' + type;
+  statusBox.className = 'status show ' + type;
   statusText.textContent = msg;
   if (type === 'processing') {
-    statusIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="#92400e" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="#92400e" stroke-width="2" fill="none"/>';
+    statusIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (type === 'success') {
-    statusIcon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#166534"/>';
+    statusIcon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>';
   } else {
-    statusIcon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#991b1b"/>';
+    statusIcon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>';
   }
 }
 
-function hideStatus() { statusBox.className = 'status-box'; }
+function hideStatus() { statusBox.className = 'status'; }
 
 function clean(val) {
   if (val === null || val === undefined) return '';
@@ -356,7 +550,7 @@ function getTaxInfo(row) {
 function handleFile(file) {
   if (!file) return;
   if (!file.name.match(/\.xlsx?$/i)) {
-    setStatus('error', 'Sirf .xlsx file select karo!');
+    setStatus('error', 'Please select an .xlsx file only.');
     return;
   }
   selectedFile = file;
@@ -397,7 +591,7 @@ btnConvert.addEventListener('click', () => {
   spinner.style.display = 'block';
   convertIcon.style.display = 'none';
   btnConvert.disabled = true;
-  setStatus('processing', 'File process ho rahi hai...');
+  setStatus('processing', 'Processing your file, please wait...');
   btnDownload.classList.remove('show');
 
   const reader = new FileReader();
@@ -410,7 +604,7 @@ btnConvert.addEventListener('click', () => {
       const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-      if (!rows.length) throw new Error('Orders sheet mein data nahi mila!');
+      if (!rows.length) throw new Error('No data found in the Orders sheet.');
 
       const zohoRows = [];
       const invoiceSet = new Set();
@@ -425,7 +619,6 @@ btnConvert.addEventListener('click', () => {
         const gstin = clean(row['GSTIN']);
         const displayName = `${custName}-${phone}`;
 
-        // GST Treatment: valid 15-digit GSTIN ho to business_gst, warna business_none
         const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
         const gstTreatment = gstinRegex.test(gstin) ? 'business_gst' : 'business_none';
 
@@ -437,7 +630,6 @@ btnConvert.addEventListener('click', () => {
         const addr2 = clean(row['Shipping Address Line2']);
         const city = clean(row['*Shipping City']);
         const shipPin = cleanPin(row['*Shipping Pincode']);
-        const fullAddr = addr1 + (addr2 ? ', ' + addr2 : '');
 
         let itemPrice = row['Product per unit'];
         if (itemPrice === '' || itemPrice === null || itemPrice === undefined) {
@@ -521,7 +713,7 @@ btnConvert.addEventListener('click', () => {
       document.getElementById('statDate').textContent = sampleDate || '—';
       statsBox.classList.add('show');
 
-      setStatus('success', `${zohoRows.length} rows convert ho gayi! Ab download karo.`);
+      setStatus('success', `${zohoRows.length} rows converted successfully. Ready to download.`);
       btnDownload.classList.add('show');
     } catch(err) {
       setStatus('error', 'Error: ' + err.message);
