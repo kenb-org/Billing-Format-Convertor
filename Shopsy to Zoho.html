@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopsy → Zoho Converter</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#caf0f8;
+  --glass:rgba(255,255,255,0.52);
+  --glass-border:rgba(255,255,255,0.78);
+  --neo-base:#b8e4f0;
+  --neo-light:#dff5fd;
+  --neo-dark:#8dbfce;
+  --neo-shadow:6px 6px 16px #8dbfce,-6px -6px 16px #dff5fd;
+  --neo-inset:inset 4px 4px 10px #8dbfce,inset -4px -4px 10px #dff5fd;
+  --neo-pressed:inset 3px 3px 8px #8dbfce,inset -3px -3px 8px #dff5fd;
+  --accent:#0077b6;
+  --accent2:#0096c7;
+  --green:#0f6e56;
+  --green-bg:rgba(15,110,86,0.10);
+  --red:#a32d2d;
+  --red-bg:rgba(163,45,45,0.10);
+  --amber:#854f0b;
+  --amber-bg:rgba(133,79,11,0.10);
+  --text:#03045e;
+  --text2:#023e8a;
+  --muted:#0077b6;
+  --muted2:#0096c7;
+  --radius:16px;
+  --radius-sm:10px;
+  --surface2:rgba(255,255,255,0.28);
+}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#caf0f8 0%,#ade8f4 40%,#90e0ef 70%,#48cae4 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem;color:var(--text);}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 20% 20%,rgba(0,180,216,0.18) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(0,119,182,0.15) 0%,transparent 50%);pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;}
+.wrap{width:100%;max-width:480px;position:relative;z-index:1;}
+
+.header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px 20px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius);box-shadow:var(--neo-shadow);}
+.logo-mark{width:44px;height:44px;background:linear-gradient(135deg,#0096c7,#0077b6);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:4px 4px 10px rgba(0,119,182,0.35),-2px -2px 8px rgba(255,255,255,0.6);}
+.logo-mark svg{width:22px;height:22px;fill:#fff;}
+.header-text h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.2px;}
+.header-text p{font-size:11px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.platform-badge{margin-left:auto;background:rgba(0,119,182,0.12);border:1px solid rgba(0,119,182,0.2);border-radius:6px;padding:3px 8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);font-weight:500;white-space:nowrap;}
+
+.panel{background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--glass-border);border-radius:20px;box-shadow:var(--neo-shadow);overflow:hidden;}
+.panel-body{padding:24px;}
+
+.step-label{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.step-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);background:var(--neo-base);box-shadow:var(--neo-shadow);flex-shrink:0;}
+.step-text{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;}
+
+/* INFO PILL */
+.info-pill{display:flex;align-items:center;gap:8px;background:rgba(0,119,182,0.07);border:1px solid rgba(0,119,182,0.15);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:20px;}
+.info-pill svg{width:14px;height:14px;fill:var(--accent);flex-shrink:0;}
+.info-pill span{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.5;}
+.info-pill strong{color:var(--accent);}
+
+.drop-zone{border:none;border-radius:var(--radius);padding:36px 20px;text-align:center;cursor:pointer;transition:box-shadow 0.2s;background:var(--surface2);position:relative;box-shadow:var(--neo-inset);}
+.drop-zone:hover,.drop-zone.dragover{box-shadow:inset 5px 5px 12px #8dbfce,inset -5px -5px 12px #dff5fd,0 0 0 2px rgba(0,119,182,0.3);}
+.drop-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon-wrap{width:50px;height:50px;border-radius:13px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:var(--neo-base);box-shadow:var(--neo-shadow);}
+.drop-icon-wrap svg{width:22px;height:22px;fill:var(--accent);}
+.drop-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.drop-hint{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.drop-hint span{color:var(--accent2);font-weight:500;}
+
+.file-chip{display:none;align-items:center;gap:10px;background:rgba(15,110,86,0.08);border:1px solid rgba(15,110,86,0.2);border-radius:var(--radius-sm);padding:10px 14px;margin-top:12px;}
+.file-chip.show{display:flex;}
+.file-chip-icon{width:16px;height:16px;fill:var(--green);flex-shrink:0;}
+.file-name{font-size:12px;font-family:'DM Mono',monospace;color:var(--green);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:2px 5px;border-radius:6px;transition:color 0.15s;}
+.file-remove:hover{color:var(--red);}
+
+.stats{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 0;}
+.stats.show{display:grid;}
+.stat{background:var(--neo-base);border-radius:var(--radius-sm);padding:12px 8px;text-align:center;box-shadow:var(--neo-shadow);}
+.stat-val{font-size:20px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;letter-spacing:-0.5px;}
+.stat-lbl{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;}
+
+.status{display:none;align-items:center;gap:8px;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;font-weight:500;margin-top:14px;}
+.status.show{display:flex;}
+.status svg{width:14px;height:14px;flex-shrink:0;}
+.status.processing{background:var(--amber-bg);border:1px solid rgba(133,79,11,0.2);color:var(--amber);}
+.status.success{background:var(--green-bg);border:1px solid rgba(15,110,86,0.2);color:var(--green);}
+.status.error{background:var(--red-bg);border:1px solid rgba(163,45,45,0.2);color:var(--red);}
+
+.warnings{display:none;margin-top:12px;background:var(--amber-bg);border:1px solid rgba(133,79,11,0.2);border-radius:var(--radius-sm);padding:10px 14px;}
+.warnings.show{display:block;}
+.warn-title{font-size:11px;font-weight:600;color:var(--amber);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.warn-list{font-size:11px;font-family:'DM Mono',monospace;color:var(--amber);max-height:90px;overflow-y:auto;line-height:1.7;white-space:pre-wrap;}
+
+.panel-footer{border-top:1px solid rgba(0,119,182,0.1);padding:16px 24px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,0.22);}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:13px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:box-shadow 0.15s,transform 0.1s;letter-spacing:0.1px;}
+.btn svg{width:15px;height:15px;fill:currentColor;flex-shrink:0;}
+.btn:active:not(:disabled){transform:scale(0.985);}
+.btn-primary{background:var(--neo-base);color:var(--accent);box-shadow:var(--neo-shadow);}
+.btn-primary:hover:not(:disabled){box-shadow:8px 8px 20px #8dbfce,-8px -8px 20px #dff5fd;}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;box-shadow:var(--neo-inset);}
+.btn-primary:active:not(:disabled){box-shadow:var(--neo-pressed);}
+.btn-success{display:none;background:linear-gradient(135deg,rgba(15,110,86,0.15),rgba(29,158,117,0.12));color:var(--green);border:1px solid rgba(15,110,86,0.25);box-shadow:var(--neo-shadow);}
+.btn-success.show{display:flex;}
+.btn-success:hover{box-shadow:8px 8px 20px #8dbfce,-8px -8px 20px #dff5fd;}
+.btn-success:active{box-shadow:var(--neo-pressed);}
+
+.spin{width:13px;height:13px;border:2px solid rgba(0,119,182,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin 0.65s linear infinite;display:none;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.foot-note{text-align:center;font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.6);border-radius:10px;padding:10px 16px;box-shadow:3px 3px 8px #8dbfce,-3px -3px 8px #dff5fd;}
+.foot-note svg{width:11px;height:11px;fill:var(--muted2);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>Shopsy → Zoho Converter</h1>
+      <p>selfship orders · zoho import · gst ready</p>
+    </div>
+    <div class="platform-badge">Flipkart Shopsy</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+
+      <div class="step-label">
+        <div class="step-num">1</div>
+        <div class="step-text">Upload Shopsy Orders File</div>
+      </div>
+
+      <div class="info-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>
+        <span>GSTIN is read <strong>per-row</strong> from the <strong>GSTIN column</strong> in your file. No manual entry needed.</span>
+      </div>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div class="drop-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        </div>
+        <div class="drop-title">Drop your SelfShip-Orders file here</div>
+        <div class="drop-hint">or <span>click to browse</span> &nbsp;·&nbsp; .xlsx / .xls</div>
+      </div>
+
+      <div class="file-chip" id="fileInfo">
+        <svg class="file-chip-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        <span class="file-name" id="fileName"></span>
+        <button class="file-remove" id="removeFile" title="Remove">&#x2715;</button>
+      </div>
+
+      <div class="stats" id="statsBox">
+        <div class="stat">
+          <div class="stat-val" id="statRows">0</div>
+          <div class="stat-lbl">Total Rows</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statInvoices">0</div>
+          <div class="stat-lbl">Invoices</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statDate">—</div>
+          <div class="stat-lbl">Date</div>
+        </div>
+      </div>
+
+      <div class="status" id="statusBox">
+        <svg id="statusIcon" viewBox="0 0 24 24"></svg>
+        <span id="statusText"></span>
+      </div>
+
+      <div class="warnings" id="warningsBox">
+        <div class="warn-title">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          Rows with issues (check manually)
+        </div>
+        <div class="warn-list" id="warnList"></div>
+      </div>
+
+    </div>
+
+    <div class="panel-footer">
+      <div class="step-label" style="margin-bottom:2px;">
+        <div class="step-num">2</div>
+        <div class="step-text">Convert &amp; Download</div>
+      </div>
+      <button class="btn btn-primary" id="btnConvert" disabled>
+        <div class="spin" id="spinner"></div>
+        <svg id="convertIcon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6a6 6 0 0 1-5.65-4H4.26A8 8 0 0 0 12 20c4.42 0 8-3.58 8-8h3l-4-4zM9 8a6 6 0 0 1 5.65 4H16.74A8 8 0 0 0 12 4C7.58 4 4 7.58 4 12H1l4 4 4-4H6c0-3.31 2.69-6 6-6z"/></svg>
+        Convert to Zoho Format
+      </button>
+      <button class="btn btn-success" id="btnDownload">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Download Zoho File
+      </button>
+    </div>
+  </div>
+
+  <div class="foot-note">
+    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>
+    All processing happens in your browser — no data sent to any server
+  </div>
+
+</div>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────
+const STATE_CODES={
+  'Andhra Pradesh':'AD','Arunachal Pradesh':'AR','Assam':'AS','Bihar':'BR',
+  'Chhattisgarh':'CG','Goa':'GA','Gujarat':'GJ','Haryana':'HR',
+  'Himachal Pradesh':'HP','Jharkhand':'JH','Karnataka':'KA','Kerala':'KL',
+  'Madhya Pradesh':'MP','Maharashtra':'MH','Manipur':'MN','Meghalaya':'ML',
+  'Mizoram':'MZ','Nagaland':'NL','Odisha':'OD','Punjab':'PB','Rajasthan':'RJ',
+  'Sikkim':'SK','Tamil Nadu':'TN','Telangana':'TS','Tripura':'TR',
+  'Uttar Pradesh':'UP','Uttarakhand':'UK','West Bengal':'WB','Delhi':'DL',
+  'Chandigarh':'CH','Jammu and Kashmir':'JK','Ladakh':'LA',
+  'West bengal':'WB','DELHI':'DL','Uttrakhand':'UK',
+  'Jharkand':'JH','Pondicherry':'PY','Puducherry':'PY',
+  'Andaman and Nicobar Islands':'AN','Dadra and Nagar Haveli':'DH',
+  'Daman and Diu':'DD','Lakshadweep':'LD',
+  'Presidency Division':'WB','Medchal-Malkajgiri':'TS'
+};
+const NOTES="Thanks for your business.";
+const TERMS="The purchased material is strictly for self-consumption and not for resale. Payment Terms: Payments must be made within the due date; late payments will incur an 18% per annum interest. Taxes & Duties: GST and other applicable taxes are extra as per government norms. Order Confirmation: Once an order is confirmed, it cannot be canceled or modified. Claims & Returns: Any claims for defects or damages must be reported within 48 hours.";
+
+// ── DOM ────────────────────────────────────────────────────────────
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileInfo    = document.getElementById('fileInfo');
+const fileName    = document.getElementById('fileName');
+const removeFile  = document.getElementById('removeFile');
+const btnConvert  = document.getElementById('btnConvert');
+const btnDownload = document.getElementById('btnDownload');
+const statusBox   = document.getElementById('statusBox');
+const statusText  = document.getElementById('statusText');
+const statusIcon  = document.getElementById('statusIcon');
+const statsBox    = document.getElementById('statsBox');
+const spinner     = document.getElementById('spinner');
+const convertIcon = document.getElementById('convertIcon');
+const warningsBox = document.getElementById('warningsBox');
+const warnList    = document.getElementById('warnList');
+
+let selectedFile=null, outputWorkbook=null;
+
+// ── HELPERS ────────────────────────────────────────────────────────
+function clean(val){
+  if(val===null||val===undefined)return'';
+  const s=String(val).trim();
+  if(s===''||s.toLowerCase()==='n.a'||s.toLowerCase()==='n/a'||s==='nan'||s==='-')return'';
+  return s;
+}
+function cleanPin(val){
+  let s=clean(val);
+  if(s.endsWith('.0'))s=s.slice(0,-2);
+  return s;
+}
+function formatDate(val){
+  if(!val&&val!==0)return'';
+  if(typeof val==='number'){
+    const d=new Date(Math.round((val-25569)*86400*1000));
+    return d.toISOString().slice(0,10);
+  }
+  const s=String(val).trim();
+  // mm/dd/yy or mm/dd/yyyy
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(m){
+    let[,mm,dd,yy]=m;
+    if(yy.length===2)yy='20'+yy;
+    return`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+  }
+  const d=new Date(s);
+  if(!isNaN(d))return d.toISOString().slice(0,10);
+  return s.slice(0,10);
+}
+function shortDate(iso){
+  if(!iso||iso.length<10)return'—';
+  const[,mm,dd]=iso.split('-');
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return`${dd}/${M[parseInt(mm,10)-1]}`;
+}
+function getPOS(state){
+  if(!state)return'';
+  return STATE_CODES[state.trim()]||state.trim().slice(0,2).toUpperCase();
+}
+// CGST has a numeric value → intra-state → GST18 / Tax Group
+// Otherwise → inter-state → IGST18 / ItemAmount
+function getTaxInfo(row){
+  const cgst=clean(row['CGST']);
+  return(cgst!==''&&!isNaN(parseFloat(cgst)))
+    ?['GST18','Tax Group']
+    :['IGST18','ItemAmount'];
+}
+function setStatus(type,msg){
+  statusBox.className='status show '+type;
+  statusText.textContent=msg;
+  if(type==='processing')statusIcon.innerHTML='<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>';
+  else if(type==='success')statusIcon.innerHTML='<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>';
+  else statusIcon.innerHTML='<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>';
+}
+function hideStatus(){statusBox.className='status';}
+
+// ── FILE HANDLING ──────────────────────────────────────────────────
+function handleFile(file){
+  if(!file)return;
+  if(!file.name.match(/\.xlsx?$/i)){setStatus('error','Please select an .xlsx or .xls file only.');return;}
+  selectedFile=file;
+  fileName.textContent=file.name;
+  fileInfo.classList.add('show');
+  dropZone.style.display='none';
+  outputWorkbook=null;
+  btnConvert.disabled=false;
+  btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');
+  warningsBox.classList.remove('show');
+  hideStatus();
+}
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('dragover');handleFile(e.dataTransfer.files[0]);});
+removeFile.addEventListener('click',()=>{
+  selectedFile=null;fileInput.value='';
+  fileInfo.classList.remove('show');
+  dropZone.style.display='';
+  btnConvert.disabled=true;
+  btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');
+  warningsBox.classList.remove('show');
+  hideStatus();outputWorkbook=null;
+});
+
+// ── CONVERT ────────────────────────────────────────────────────────
+btnConvert.addEventListener('click',()=>{
+  if(!selectedFile)return;
+  spinner.style.display='block';convertIcon.style.display='none';
+  btnConvert.disabled=true;btnDownload.classList.remove('show');
+  statsBox.classList.remove('show');warningsBox.classList.remove('show');
+  setStatus('processing','Processing your Shopsy orders file...');
+
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:false});
+
+      const sheetName=
+        wb.SheetNames.find(s=>s.toLowerCase().includes('selfship'))||
+        wb.SheetNames.find(s=>s.toLowerCase().includes('order'))||
+        wb.SheetNames[0];
+
+      const ws=wb.Sheets[sheetName];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length)throw new Error('No data rows found in the sheet.');
+
+      // Validate key columns exist
+      const required=['Invoice No.','Invoice Date (mm/dd/yy)','Order Id','SKU Code',
+                       'Product','Quantity','Invoice Amount','HSN','GSTIN'];
+      const missing=required.filter(c=>!(c in rows[0]));
+      if(missing.length)throw new Error('Missing columns: '+missing.join(', '));
+
+      const zohoRows=[];
+      const invoiceSet=new Set();
+      const warnings=[];
+      let sampleDate='';
+
+      rows.forEach((row,idx)=>{
+        const rowNum=idx+2;
+        const invoiceNo=clean(row['Invoice No.']);
+        if(!invoiceNo){warnings.push(`Row ${rowNum}: Missing Invoice No. — skipped`);return;}
+
+        const invDate=formatDate(row['Invoice Date (mm/dd/yy)']);
+        if(!sampleDate&&invDate)sampleDate=shortDate(invDate);
+
+        // Customer name: prefer Ship to name, fallback Buyer name
+        const shipToName=clean(row['Ship to name']);
+        const buyerName =clean(row['Buyer name']);
+        const displayName=shipToName||buyerName||'Unknown';
+
+        const phone   =clean(row['Phone No']);
+        const email   =clean(row['Email Id']);
+        const gstin   =clean(row['GSTIN']);
+        const state   =clean(row['State']);
+        const pos     =getPOS(state);
+        const addr1   =clean(row['Address Line 1']);
+        const addr2   =clean(row['Address Line 2']);
+        const city    =clean(row['City']);
+        const pinCode =cleanPin(row['PIN Code']);
+        const sku     =clean(row['SKU Code']);
+        const product =clean(row['Product']);
+        let   hsn     =clean(row['HSN']);
+        if(hsn.endsWith('.0'))hsn=hsn.slice(0,-2);
+        const qty     =row['Quantity']||1;
+        const amount  =row['Invoice Amount'];
+
+        // GST Treatment: business_gst if valid GSTIN, else business_none
+        const GSTIN_RE=/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        const gstTreatment=GSTIN_RE.test(gstin)?'business_gst':'business_none';
+
+        if(!gstin)warnings.push(`Row ${rowNum} (${invoiceNo}): No GSTIN — treatment set to business_none`);
+
+        const[itemTax,itemTaxType]=getTaxInfo(row);
+        invoiceSet.add(invoiceNo);
+
+        zohoRows.push({
+          'Invoice Number'                    :invoiceNo,
+          'Invoice Date'                      :invDate,
+          'Customer Name'                     :`${displayName}-${phone}`,
+          'GST Treatment'                     :gstTreatment,
+          'GST Identification Number (GSTIN)' :gstin,
+          'Place of Supply'                   :pos,
+          'Sales order id'                    :clean(row['Order Id']),
+          'Payment Terms'                     :0,
+          'Payment Terms Label'               :'Paid',
+          'Due Date'                          :invDate,
+          'Currency Code'                     :'INR',
+          'Exchange Rate'                     :1,
+          'Account'                           :'Sales',
+          'SKU'                               :sku,
+          'Item Name'                         :product,
+          'Item Desc'                         :'',
+          'Item Type'                         :'goods',
+          'HSN/SAC'                           :hsn,
+          'Quantity'                          :qty,
+          'Usage unit'                        :'pcs',
+          'Item Price'                        :amount,
+          'Is Inclusive Tax'                  :true,
+          'Item Tax'                          :itemTax,
+          'Item Tax Type'                     :itemTaxType,
+          'Item Tax %'                        :18,
+          'Is Discount Before Tax'            :true,
+          'Entity Discount Percent'           :0,
+          'Entity Discount Amount'            :0,
+          'Discount'                          :0,
+          'Discount Amount'                   :0,
+          'Adjustment'                        :0,
+          'Adjustment Description'            :'Adjustment',
+          'Notes'                             :NOTES,
+          'Terms & Conditions'                :TERMS,
+          'E-Commerce Operator Name'          :'Picknpack ecommerce',
+          'E-Commerce Operator GSTIN'         :'07AAMCP7214N1ZW',
+          'Branch Name'                       :'Delhi- Online',
+          'Email'                             :email,
+          'MOBILE NO'                         :phone,
+          'Billing Address Line 1'            :addr1,
+          'Billing Address Line 2'            :addr2,
+          'Billing city'                      :city,
+          'Billing State'                     :state,
+          'Billing Country'                   :'India',
+          'Billing Pin code'                  :pinCode,
+          'Shipping Address Line 1'           :addr1,
+          'Shipping Address Line 2'           :addr2,
+          'Shipping City'                     :city,
+          'Shipping State'                    :state,
+          'Shipping Country'                  :'India',
+          'Shipping Pin code'                 :pinCode,
+          'Accounts Receivable'               :'Accounts Receivable',
+          'Ack No.:'                          :'',
+          'IRN :'                             :''
+        });
+      });
+
+      if(!zohoRows.length)throw new Error('No valid rows processed. Check your input file.');
+
+      const newWb=XLSX.utils.book_new();
+      const newWs=XLSX.utils.json_to_sheet(zohoRows);
+      const colWidths=[18,13,34,14,22,14,24,14,16,13,13,13,10,15,45,10,10,
+                       12,10,10,14,16,12,14,11,20,22,22,10,14,11,20,22,30,
+                       22,18,14,42,14,45,22,16,16,13,14,45,22,16,16,13,14,18,12,10];
+      newWs['!cols']=colWidths.map(w=>({wch:w}));
+      XLSX.utils.book_append_sheet(newWb,newWs,'zoho formate');
+      outputWorkbook=newWb;
+
+      document.getElementById('statRows').textContent    =zohoRows.length;
+      document.getElementById('statInvoices').textContent=invoiceSet.size;
+      document.getElementById('statDate').textContent    =sampleDate||'—';
+      statsBox.classList.add('show');
+
+      if(warnings.length){
+        warnList.textContent=warnings.join('\n');
+        warningsBox.classList.add('show');
+      }
+      setStatus('success',`${zohoRows.length} rows converted · ${invoiceSet.size} invoices · Ready to download`);
+      btnDownload.classList.add('show');
+
+    }catch(err){
+      setStatus('error','Error: '+err.message);
+    }finally{
+      spinner.style.display='none';convertIcon.style.display='';
+      btnConvert.disabled=false;
+    }
+  };
+  reader.readAsArrayBuffer(selectedFile);
+});
+
+// ── DOWNLOAD ───────────────────────────────────────────────────────
+btnDownload.addEventListener('click',()=>{
+  if(!outputWorkbook)return;
+  const today=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(outputWorkbook,`shopsy_zoho_${today}.xlsx`);
+});
+</script>
+</body>
+</html>
