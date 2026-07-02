@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashfree Payment Formatter</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#f4f6f3; --card:#ffffff; --ink:#17241e; --ink-soft:#5b6a63;
+    --line:#dde3de; --green:#0e6b4f; --green-soft:#e5f2ec;
+    --red:#b3372c; --red-soft:#fbeae8; --amber:#8a6410; --amber-soft:#fbf3dd;
+    --mono:"Consolas","SF Mono","Menlo",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,sans-serif;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:960px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:24px}
+  h1{font-size:1.45rem;letter-spacing:-.01em}
+  h1 .tag{display:inline-block;font-family:var(--mono);font-size:.7rem;background:var(--green);color:#fff;border-radius:4px;padding:2px 8px;vertical-align:middle;margin-left:10px;letter-spacing:.05em}
+  header p{color:var(--ink-soft);font-size:.85rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:18px}
+  .card h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-soft);margin-bottom:12px}
+  /* required format table */
+  .fmt-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  table.fmt{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:.75rem;white-space:nowrap}
+  table.fmt th{background:var(--ink);color:#fff;padding:7px 12px;text-align:left;font-weight:600}
+  table.fmt th.opt{background:#4d5c55}
+  table.fmt td{padding:7px 12px;border-top:1px solid var(--line);color:var(--ink-soft)}
+  .fmt-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
+  .fmt-note b{color:var(--ink)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:1px 7px;border-radius:99px;margin-right:6px}
+  .pill.req{background:var(--green-soft);color:var(--green)}
+  .pill.opt{background:#eef0ee;color:#4d5c55}
+  /* settings */
+  .settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .field label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:5px}
+  .field input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;font-family:var(--mono);font-size:.85rem;background:#fbfcfb;color:var(--ink)}
+  .field input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+  .field .hint{font-size:.7rem;color:var(--ink-soft);margin-top:4px}
+  /* dropzone */
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:34px 20px;text-align:center;cursor:pointer;transition:.15s;background:#fbfcfb}
+  .drop:hover,.drop.over{border-color:var(--green);background:var(--green-soft)}
+  .drop .big{font-size:1rem;font-weight:600}
+  .drop .sub{font-size:.8rem;color:var(--ink-soft);margin-top:4px}
+  .drop input{display:none}
+  /* checks */
+  .checks{list-style:none;display:grid;gap:6px;font-size:.85rem}
+  .checks li{display:flex;gap:9px;align-items:flex-start;padding:8px 12px;border-radius:7px}
+  .checks li .ic{font-family:var(--mono);font-weight:700;flex:none;width:18px;text-align:center}
+  .ok{background:var(--green-soft);color:var(--green)}
+  .bad{background:var(--red-soft);color:var(--red)}
+  .warn{background:var(--amber-soft);color:var(--amber)}
+  /* preview */
+  .prev-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin-top:12px}
+  table.prev{border-collapse:collapse;font-family:var(--mono);font-size:.72rem;white-space:nowrap;width:100%}
+  table.prev th{background:var(--green-soft);color:var(--green);padding:6px 10px;text-align:left;position:sticky;top:0}
+  table.prev td{padding:6px 10px;border-top:1px solid var(--line)}
+  table.prev td.num{text-align:right}
+  .summary{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;font-size:.82rem}
+  .summary div b{display:block;font-family:var(--mono);font-size:1.15rem;color:var(--green)}
+  /* button */
+  .btn{display:inline-flex;align-items:center;gap:9px;background:var(--green);color:#fff;border:none;border-radius:9px;padding:13px 26px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:16px}
+  .btn:hover{background:#0b5940}
+  .btn:disabled{background:#a9bdb4;cursor:not-allowed}
+  .reset{background:none;border:none;color:var(--ink-soft);font-size:.8rem;text-decoration:underline;cursor:pointer;margin-left:14px}
+  .hidden{display:none}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Payment Formatter<span class="tag">CF-SETL</span></h1>
+  <p>Cashfree invoice sheet &rarr; payment import file, in one click</p>
+</header>
+
+<!-- REQUIRED FORMAT DEMO -->
+<div class="card">
+  <h2>Required input format &mdash; keep your Excel headers exactly like this</h2>
+  <div class="fmt-scroll">
+    <table class="fmt">
+      <thead><tr>
+        <th>Date</th><th>Invoice Number</th><th class="opt">Order Number</th>
+        <th>Customer Name</th><th>Amount</th><th>Cashfree ID</th>
+      </tr></thead>
+      <tbody><tr>
+        <td>01/07/2026</td><td>ECOM/26-27/9601</td><td>6a428ec835b5&hellip;</td>
+        <td>Valmo-7737141181</td><td>1445.5</td><td>order_9915713Fog&hellip;</td>
+      </tr></tbody>
+    </table>
+  </div>
+  <p class="fmt-note">
+    <span class="pill req">Required</span>Date &middot; Invoice Number &middot; Customer Name &middot; Amount &middot; Cashfree ID
+    &nbsp;&nbsp;<span class="pill opt">Optional</span>Order Number (not used in output)<br>
+    Headers must be in <b>row 1</b> of the <b>first sheet</b>. Date format <b>DD/MM/YYYY</b>. Extra columns are ignored.
+  </p>
+</div>
+
+<!-- SETTINGS -->
+<div class="card">
+  <h2>Settings</h2>
+  <div class="settings">
+    <div class="field">
+      <label for="suffixStart">Starting Payment No. Suffix *</label>
+      <input type="number" id="suffixStart" placeholder="e.g. 4227" min="1">
+      <div class="hint">Your last used number + 1. Runs sequentially per row.</div>
+    </div>
+    <div class="field">
+      <label for="prefix">Payment No. Prefix</label>
+      <input type="text" id="prefix" value="CF-SETL-">
+    </div>
+    <div class="field">
+      <label for="deposit">Deposit To</label>
+      <input type="text" id="deposit" value="CASHFREE PAYMENTS GATWAY">
+    </div>
+    <div class="field">
+      <label for="branch">Branch Name</label>
+      <input type="text" id="branch" value="Delhi- Online">
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="card">
+  <h2>1 &middot; Upload input file</h2>
+  <label class="drop" id="drop">
+    <div class="big">Drop your input .xlsx here, or click to browse</div>
+    <div class="sub">The file is processed in your browser only &mdash; nothing is uploaded anywhere.</div>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv">
+  </label>
+</div>
+
+<!-- VALIDATION -->
+<div class="card hidden" id="checkCard">
+  <h2>2 &middot; Data check</h2>
+  <ul class="checks" id="checks"></ul>
+</div>
+
+<!-- RESULT -->
+<div class="card hidden" id="resultCard">
+  <h2>3 &middot; Preview &amp; download</h2>
+  <div class="summary" id="summary"></div>
+  <div class="prev-scroll"><table class="prev" id="prevTable"></table></div>
+  <button class="btn" id="dl">&#8681; Download formatted Excel</button>
+  <button class="reset" id="reset">Start over</button>
+</div>
+
+</div>
+
+<script>
+const REQUIRED = ["Date","Invoice Number","Customer Name","Amount","Cashfree ID"];
+const OUT_HEADERS = ["Payment Number Prefix","Payment Number Suffix","Customer Name","Place of Supply","GST Treatment","GST Identification Number (GSTIN)","Payment Type","Description of Supply","Tax Name","Tax Percentage","Tax Type","Date","Mode","Exchange Rate","Amount","Description","Bank Charges","Tax Account","Deposit To","Reference Number","Invoice Number","Amount Applied to Invoice","Invoice Amount","Withholding Tax Amount","Branch Name"];
+
+const $ = id => document.getElementById(id);
+let outputRows = null, inputFileName = "";
+
+$("drop").addEventListener("dragover", e => { e.preventDefault(); $("drop").classList.add("over"); });
+$("drop").addEventListener("dragleave", () => $("drop").classList.remove("over"));
+$("drop").addEventListener("drop", e => {
+  e.preventDefault(); $("drop").classList.remove("over");
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+$("file").addEventListener("change", e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+$("reset").addEventListener("click", () => location.reload());
+$("dl").addEventListener("click", downloadOutput);
+
+function check(state, text){
+  const li = document.createElement("li");
+  li.className = state;
+  li.innerHTML = `<span class="ic">${state==="ok"?"\u2713":state==="warn"?"!":"\u2715"}</span><span>${text}</span>`;
+  $("checks").appendChild(li);
+  return state !== "bad";
+}
+
+// Excel serial or string -> {disp:"DD/MM/YYYY", p1, p2, yyyy} | null
+function parseDate(v){
+  if (v == null || v === "") return null;
+  if (typeof v === "number"){                       // Excel serial date
+    const d = XLSX.SSF.parse_date_code(v);
+    if (!d) return null;
+    const dd = String(d.d).padStart(2,"0"), mm = String(d.m).padStart(2,"0");
+    return { disp:`${dd}/${mm}/${d.y}`, p1:dd, p2:mm, yyyy:String(d.y) };
+  }
+  const m = String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (!m) return null;
+  const p1 = m[1].padStart(2,"0"), p2 = m[2].padStart(2,"0");
+  return { disp:`${p1}/${p2}/${m[3]}`, p1, p2, yyyy:m[3] };
+}
+
+function round2(n){ return Math.round(n * 100) / 100; }
+
+function handleFile(file){
+  inputFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { processWorkbook(XLSX.read(new Uint8Array(e.target.result), { type:"array" })); }
+    catch(err){
+      $("checkCard").classList.remove("hidden"); $("checks").innerHTML = "";
+      check("bad", "Could not read this file. Save it as .xlsx and try again. (" + err.message + ")");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function processWorkbook(wb){
+  $("checks").innerHTML = "";
+  $("checkCard").classList.remove("hidden");
+  $("resultCard").classList.add("hidden");
+  outputRows = null;
+
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  check("ok", `File loaded &mdash; reading first sheet "<b>${wb.SheetNames[0]}</b>"`);
+
+  const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+  if (!rows.length){ check("bad","The sheet is empty &mdash; no data rows found below the header."); return; }
+
+  // header check (trim header names)
+  const headers = Object.keys(rows[0]).map(h => h.trim());
+  const missing = REQUIRED.filter(r => !headers.includes(r));
+  if (missing.length){
+    check("bad", `Missing required column(s): <b>${missing.join(", ")}</b>. Rename your headers to match the format above.`);
+    return;
+  }
+  check("ok", `All required columns found: ${REQUIRED.join(" &middot; ")}`);
+
+  // normalize keys (trim) once
+  const data = rows.map(r => {
+    const o = {};
+    for (const k in r) o[k.trim()] = r[k];
+    return o;
+  });
+
+  // row-level validation
+  const problems = [];
+  const clean = [];
+  data.forEach((r, i) => {
+    const rowNo = i + 2; // header is row 1
+    const isBlank = REQUIRED.every(c => String(r[c]).trim() === "");
+    if (isBlank) return; // skip fully blank rows silently
+
+    const d = parseDate(r["Date"]);
+    const amt = parseFloat(String(r["Amount"]).replace(/,/g,""));
+    const errs = [];
+    if (!d) errs.push("bad/missing Date");
+    if (isNaN(amt)) errs.push("bad/missing Amount");
+    if (String(r["Invoice Number"]).trim()==="") errs.push("missing Invoice Number");
+    if (String(r["Customer Name"]).trim()==="")  errs.push("missing Customer Name");
+    if (String(r["Cashfree ID"]).trim()==="")    errs.push("missing Cashfree ID");
+    if (errs.length) problems.push(`Row ${rowNo}: ${errs.join(", ")}`);
+    else clean.push({ ...r, _date:d, _amt:round2(amt) });
+  });
+
+  if (problems.length){
+    check("bad", `${problems.length} row(s) have issues and processing stopped:<br>` +
+      problems.slice(0,8).join("<br>") + (problems.length>8 ? `<br>&hellip;and ${problems.length-8} more` : ""));
+    return;
+  }
+  check("ok", `${clean.length} data rows validated &mdash; dates, amounts, invoice numbers and Cashfree IDs all present.`);
+
+  // duplicate invoice warning (doesn't block)
+  const seen = {}, dups = new Set();
+  clean.forEach(r => { const k = r["Invoice Number"]; if (seen[k]) dups.add(k); seen[k] = 1; });
+  if (dups.size) check("warn", `Note: duplicate Invoice Number(s) found (${[...dups].slice(0,3).join(", ")}${dups.size>3?"&hellip;":""}). Output will still be generated.`);
+
+  // suffix required
+  const start = parseInt($("suffixStart").value, 10);
+  if (isNaN(start)){
+    check("bad", `Enter the <b>Starting Payment No. Suffix</b> in Settings above, then re-select the file.`);
+    return;
+  }
+  check("ok", `Payment numbers will run <b>${$("prefix").value}${start}</b> to <b>${$("prefix").value}${start + clean.length - 1}</b>.`);
+
+  buildOutput(clean, start);
+}
+
+function buildOutput(clean, start){
+  const prefix = $("prefix").value, deposit = $("deposit").value, branch = $("branch").value;
+  outputRows = clean.map((r, i) => {
+    const d = r._date;
+    return [
+      prefix, start + i, String(r["Customer Name"]).trim(), "", "", "",
+      "Invoice Payment", "", "", "", "",
+      d.disp, "Cashfree", 1, r._amt,
+      `Cashfree prepaid collection. Invoice dated ${d.disp}`,
+      "", "", deposit,
+      String(r["Cashfree ID"]).trim(), String(r["Invoice Number"]).trim(),
+      r._amt, r._amt, "", branch
+    ];
+  });
+
+  // summary
+  const total = round2(clean.reduce((s,r) => s + r._amt, 0));
+  $("summary").innerHTML =
+    `<div><b>${outputRows.length}</b>payments</div>` +
+    `<div><b>&#8377;${total.toLocaleString("en-IN")}</b>total amount</div>` +
+    `<div><b>${prefix}${start}&ndash;${start+outputRows.length-1}</b>payment numbers</div>`;
+
+  // preview (first 5 rows, key columns)
+  const previewCols = [0,1,2,11,14,20,19,24];
+  let html = "<thead><tr>" + previewCols.map(c => `<th>${OUT_HEADERS[c]}</th>`).join("") + "</tr></thead><tbody>";
+  outputRows.slice(0,5).forEach(row => {
+    html += "<tr>" + previewCols.map(c => `<td class="${c===14?"num":""}">${row[c]}</td>`).join("") + "</tr>";
+  });
+  if (outputRows.length > 5) html += `<tr><td colspan="${previewCols.length}" style="color:var(--ink-soft)">&hellip;and ${outputRows.length-5} more rows</td></tr>`;
+  $("prevTable").innerHTML = html + "</tbody>";
+  $("resultCard").classList.remove("hidden");
+  $("resultCard").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function downloadOutput(){
+  if (!outputRows) return;
+  const ws = XLSX.utils.aoa_to_sheet([OUT_HEADERS, ...outputRows]);
+  ws["!cols"] = OUT_HEADERS.map((h,i) => ({ wch: Math.max(h.length, i===15?45:i===19?38:12) + 2 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  const d = new Date(), stamp = `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
+  XLSX.writeFile(wb, `output(payment format) ${stamp}.xlsx`);
+}
+</script>
+</body>
+</html>
