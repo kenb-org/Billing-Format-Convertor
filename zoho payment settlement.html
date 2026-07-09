@@ -109,11 +109,27 @@
     </div>
     <div class="field">
       <label for="prefix">Payment No. Prefix</label>
-      <input type="text" id="prefix" value="CF-SETL-">
+      <input list="prefixlist" type="text" id="prefix" value="CF-SETL-">
+      <datalist id="prefixlist">
+        <option value="CF-SETL-">
+        <option value="FK-SETL-">
+      </datalist>
+    </div>
+    <div class="field">
+      <label for="prefix">Payment Mode</label>
+      <input list="paymentmodelist" type="text" id="paymentmode">
+      <datalist id="paymentmodelist">
+        <option value="FLIPKART INTERNET PRIVATE LIMITED">
+        <option value="Cashfree">
+      </datalist>
     </div>
     <div class="field">
       <label for="deposit">Deposit To</label>
-      <input type="text" id="deposit" value="CASHFREE PAYMENTS GATWAY">
+      <input type="text" list="depositlist" id="deposit">
+      <datalist id="depositlist">
+        <option value="Cashfree - Payment Gateway">
+        <option value="Flipkart - Payment Gateway">
+      </datalist>
     </div>
     <div class="field">
       <label for="branch">Branch Name</label>
