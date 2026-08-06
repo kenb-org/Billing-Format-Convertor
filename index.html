@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Unavailable</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            max-width: 550px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-top: 6px solid #e74c3c;
+        }
+
+        .icon {
+            font-size: 60px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        p {
+            color: #666;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+
+        .code {
+            margin-top: 25px;
+            padding: 12px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="icon">⚠️</div>
+
+    <h1>Service Unavailable</h1>
+
+    <p>
+        Your Netlify subscription has expired.
+        Please contact the administrator to renew the subscription and restore this website.
+    </p>
+
+    <div class="code">
+        Error Code: NETLIFY_SUBSCRIPTION_EXPIRED
+    </div>
+</div>
+
+</body>
+</html>
